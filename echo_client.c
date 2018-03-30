@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
     printf("client: received '%s'\n",buf);
 
 
-    if (send(sockfd, "1", 2, 0) == -1) {
+    if (send(sockfd, "1", 1, 0) == -1) {
         perror("send");
         return -1;
 
@@ -105,13 +105,13 @@ int main(int argc, char *argv[]) {
     printf("client: received '%s'\n",buf);
 
 
-    if (send(sockfd, "BLABLABSON", 11, 0) == -1) {
+    if (send(sockfd, "BLABLABSON", 10, 0) == -1) {
         perror("send");
         return -1;
 
     }
 
-    if (send(sockfd, "1", 2, 0) == -1) {
+    if (send(sockfd, "1", 1, 0) == -1) {
         perror("send");
         return -1;
 

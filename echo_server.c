@@ -104,7 +104,6 @@ int send_func_login(int fd) {
         return 2;
     }
 
-
     return -1;
 }
 // int ementa(int fd) {
@@ -331,7 +330,7 @@ int send_func_login(int fd) {
 
 int validate_login_prof(int fd) {
 
-    char string[51] = "Olá!\nDigite seu nome e senha, em lihas separadas.\n";
+    char string[51] = "Olá!\nDigite seu nome e senha, em linhas separadas.\n";
     char nome[MAXDATASIZE];
     char senha[MAXDATASIZE];
     int numbytes;
@@ -361,11 +360,27 @@ int validate_login_prof(int fd) {
 
     FILE* fp ;
 
-    while (fp = fopen(PROFESSORS, "r")) {
+    char line[255];
+    char *string_nome;
+    char *string_senha;
 
+    if (fp = fopen(PROFESSORS, "r")) {
 
+        while (fgets(line, 255, fp) ) {
+            // string_nome = strtok(line, " ");
+            // string_senha = strtok(line, "\n");
+
+            if (strcmp(string_nome, nome) == 0 && strcmp(string_senha, senha) == 0 ) {
+                printf("fadfasdfads");
+                fclose(fp);
+                return 1;
+            }
+        }
 
     }
+
+    fclose(fp);
+    return -1;
 
 }
 int validate_login_student(int fd) {
@@ -378,7 +393,7 @@ void send_func(int fd) {
 
     if (login == 1) {
         login = validate_login_prof(fd);
-
+    
     }
     else if (login == 2) {
         login = validate_login_student(fd);
