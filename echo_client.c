@@ -26,7 +26,7 @@ void *get_in_addr(struct sockaddr *sa)
 }
 
 void receive_func() {
-
+    
 
 }
 
@@ -87,31 +87,55 @@ int main(int argc, char *argv[]) {
 
     buf[numbytes] = '\0';
     printf("client: received '%s'\n",buf);
+    
+    do {
+        char choice[10];
+        fgets(choice, 10, stdin);
+        for (int i = 10; i > 0; i--) {
+            if (choice[i] == '\n') {
+                choice[i] = '\0';
+                break;
+            }
+        }
+        if (send(sockfd, choice, 10, 0) == -1) {
+            perror("send");
+            return -1;
+        }
 
+        if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+            perror("recv");
+            exit(1);
+        }
+        buf[numbytes] = '\0';
+        printf("server: received '%s'\n",buf);
 
-    if (send(sockfd, "1", 1, 0) == -1) {
+    } while (strcmp(buf, "Por favor, digite 1 ou 2.\n") == 0);
+
+    char username[32];
+    fgets(username, 32, stdin);
+    for (int i = 32; i > 0; i--) {
+        if (username[i] == '\n') {
+            username[i] = '\0';
+            break;
+        }
+    }
+    printf("username: '%s'\n", username);
+    if (send(sockfd, username, 32, 0) == -1) {
         perror("send");
         return -1;
 
     }
 
-
-    if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
-        perror("recv");
-        exit(1);
+    char password[32];
+    fgets(password, 32, stdin);
+    for (int i = 32; i > 0; i--) {
+        if (password[i] == '\n') {
+            password[i] = '\0';
+            break;
+        }
     }
-
-    buf[numbytes] = '\0';
-    printf("client: received '%s'\n",buf);
-
-
-    if (send(sockfd, "BLABLABSON", 10, 0) == -1) {
-        perror("send");
-        return -1;
-
-    }
-
-    if (send(sockfd, "1", 1, 0) == -1) {
+    printf("password: '%s'\n", password);
+    if (send(sockfd, password, 32, 0) == -1) {
         perror("send");
         return -1;
 

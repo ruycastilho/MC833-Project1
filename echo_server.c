@@ -80,21 +80,16 @@ int send_func_login(int fd) {
     printf("server: received '%s'\n",buffer);
 
     char erro[27] = "Por favor, digite 1 ou 2.\n";
-
     while (strcmp(buffer, "1") != 0 && strcmp(buffer, "2") != 0) {
-
         if (repeat_send(fd, erro, sizeof(erro)) == -1) {
             perror("send");
             return -1;
-
         }
 
         if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
             perror("recv");
             return -1;
         }
-
-
     }
 
     if ( strcmp(buffer, "1") == 0) {
@@ -330,12 +325,12 @@ int send_func_login(int fd) {
 
 int validate_login_prof(int fd) {
 
-    char string[51] = "Olá!\nDigite seu nome e senha, em linhas separadas.\n";
+    char string[52] = "Ola!\nDigite seu nome e senha, em linhas separadas.\n";
     char nome[MAXDATASIZE];
     char senha[MAXDATASIZE];
     int numbytes;
 
-    if (repeat_send(fd, string, 51) == -1) {
+    if (repeat_send(fd, string, 52) == -1) {
         perror("send");
         return -1;
     }
