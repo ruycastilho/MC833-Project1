@@ -1,31 +1,23 @@
-[TÍTULO]
-Algoritmos e Programação de Computadores
 [CÓDIGO]
 MC102
+[TÍTULO]
+Algoritmos e Programação de Computadores
 [INSTITUTO]
 IC
 [SALA]
 CB10
 [HORÁRIO]
-SEGUNDA 14:00
-QUARTA 14:00
+SEGUNDA 14:00 QUARTA 14:00
 [EMENTA]
 BLA BLA
 [NOME_PROFESSOR]
 BLABLABSON
-[QUANTIDADE_ALUNOS]
-3
-[LISTA_ALUNOS]
-BLA1
-BLA2
-BLA4
 [COMENTARIO]
 Leiam o texto X para a próxima aula!
-
-[TÍTULO]
-Ciências do Ambiente
 [CÓDIGO]
 BE310
+[TÍTULO]
+Ciências do Ambiente
 [INSTITUTO]
 IB
 [SALA]
@@ -36,9 +28,5 @@ QUARTA 08:00
 BLA BLA 2
 [NOME_PROFESSOR]
 BLABLABSON2
-[QUANTIDADE_ALUNOS]
-1
-[LISTA_ALUNOS]
-BLA3
 [COMENTARIO]
 Tragam dúvidas sobre a revisão!
