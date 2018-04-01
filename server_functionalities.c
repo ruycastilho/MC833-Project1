@@ -113,6 +113,8 @@ int ementa(int fd) {
         return -1;
     }
 
+    printf("received '%s'\n", buffer);
+
     FILE* fp ;
     char input[255];
 
@@ -132,11 +134,13 @@ int ementa(int fd) {
                         if (strcmp(input, "[EMENTA]") == 0  ) {
                             fgets(input, 255, fp);
                             fgets(input, 255, fp);
-                            
+                                
+                                printf("preparendo para mandar e ementa\n");
                                 if (repeat_send(fd, input, sizeof(input)) == -1) {
                                     perror("send");
                                     return 1;
                                 }
+                                printf("ementa enviada\n");
 
                                 fclose(fp);
                                 return 1;
@@ -682,11 +686,14 @@ int send_login_prof(int fd) {
     char buffer[MAXDATASIZE];
     int numbytes;
 
-    if (send(fd, string, sizeof(string), 0) == -1) {
+    printf("preparando para enviar opcoes\n");
+    usleep(3000000);
+    if ((numbytes = send(fd, string, sizeof(string), 0)) == -1) {
         perror("send");
         return -1;
 
     }
+    printf("opcoes enviadas, %d bytes transmitidos\n", numbytes);
 
     if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
         perror("recv");
@@ -807,17 +814,15 @@ int validate_login_prof(int fd) {
     char senha[MAXDATASIZE];
     int numbytes;
 
-    printf("comeco da funcao validate login prof\n");
     if (send(fd, string, 53, 0) == -1) {
         perror("send");
         return -1;
     }
-    printf("depois do send\n");
+
     if ((numbytes = recv(fd, nome, MAXDATASIZE-1, 0)) == -1) {
         perror("recv");
         return -1;
     }
-    printf("depois do recv\n");
 
     nome[numbytes] = '\0';
     printf("server: received '%s'\n",nome);
@@ -857,7 +862,7 @@ int validate_login_prof(int fd) {
         perror("send");
         return -1;
     }
-
+    usleep(1000000);
 
     fclose(fp);
     return -1;

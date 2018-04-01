@@ -169,6 +169,8 @@ int main(int argc, char *argv[]) {
         buf[numbytes] = '\0';
         printf("client: received '%s'\n",buf);
 
+        usleep(1000000);
+
     } while (strcmp(buf, "Erro na validacao.\n") == 0);
 
 
@@ -222,13 +224,18 @@ int main(int argc, char *argv[]) {
                 return -1;
             }
 
+            printf("deveria esperar a ementa aqui\n");
             if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
                 perror("recv");
                 exit(1);
             }
             buf[numbytes] = '\0';
             printf("client: received '%s'\n",buf);
+
+            usleep(3000000);
         }
+
+
 
         first_time = 1;
     }
