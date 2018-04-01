@@ -16,8 +16,6 @@
 #include <string.h>
 #include "server_functionalities.h"
 
-<<<<<<< HEAD
-
 #define PORT "3494" // the port users will be connecting to
 #define BACKLOG 10 // how many pending connections queue will hold
 

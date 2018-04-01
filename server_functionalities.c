@@ -719,16 +719,16 @@ int send_login_prof(int fd) {
             infos(fd);
             break;
         case 3:
-            return todas_infos(fd);
+            todas_infos(fd);
             break;
         case 4:
-            return cod_titulo(fd);
+            cod_titulo(fd);
             break;
         case 5:
-            return escrever_com(fd);
+            escrever_com(fd);
             break;
         case 6:
-            return ler_com(fd);
+            ler_com(fd);
             break;
         case 7:
             return -1;

@@ -13,7 +13,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-#define PORT "3491" // the port client will be connecting to
+#define PORT "3494" // the port client will be connecting to
 #define MAXDATASIZE 1000 // max number of bytes we can get at once
 
 // get sockaddr, IPv4 or IPv6:
@@ -164,7 +164,6 @@ int main(int argc, char *argv[]) {
         if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
             perror("recv");
             exit(1);
-
         }
 
         buf[numbytes] = '\0';
@@ -233,85 +232,6 @@ int main(int argc, char *argv[]) {
 
         first_time = 1;
     }
-
-    // fgets(username, 32, stdin);
-    // for (int i = 32; i > 0; i--) {
-    //     if (username[i] == '\n') {
-    //         username[i] = '\0';
-    //         break;
-    //     }
-    // }
-    // printf("username: '%s'\n", username);
-    // if (send(sockfd, username, 32, 0) == -1) {
-    //     perror("send");
-    //     return -1;
-
-    // }
-
-
-    // if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
-    //     perror("recv");
-    //     exit(1);
-    // }
-
-    // buf[numbytes] = '\0';
-    // printf("client: received '%s'\n", buf);
-
-    // fgets(username, 32, stdin);
-    // for (int i = 32; i > 0; i--) {
-    //     if (username[i] == '\n') {
-    //         username[i] = '\0';
-    //         break;
-    //     }
-    // }
-    // printf("username: '%s'\n", username);
-    // if (send(sockfd, username, 32, 0) == -1) {
-    //     perror("send");
-    //     return -1;
-
-    // }
-
-
-    // if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
-    //     perror("recv");
-    //     exit(1);
-    // }
-
-    // buf[numbytes] = '\0';
-    // printf("client: received '%s'\n", buf);
-
-    // if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
-    //     perror("recv");
-    //     exit(1);
-    // }
-
-    // buf[numbytes] = '\0';
-    // printf("client: received '%s'\n", buf);
-
-    // if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
-    //     perror("recv");
-    //     exit(1);
-    // }
-
-    // buf[numbytes] = '\0';
-    // printf("client: received '%s'\n", buf);
-
-    // if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
-    //     perror("recv");
-    //     exit(1);
-    // }
-
-    // buf[numbytes] = '\0';
-    // printf("client: received '%s'\n", buf);
-
-    // if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
-    //     perror("recv");
-    //     exit(1);
-    // }
-
-    // buf[numbytes] = '\0';
-    // printf("client: received '%s'\n", buf);
-
 
     close(sockfd);
 
