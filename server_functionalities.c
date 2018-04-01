@@ -474,13 +474,13 @@ int cod_titulo(int fd) {
 
     if (fp = fopen(COURSES, "r")) {
 
-        while (fscanf(fp,"%s", input) ) {
+        while (fscanf(fp,"%s", input) != EOF) {
             if (strcmp(input, "[CÓDIGO]") == 0  ) {
 
-                fscanf(fp,"%s", input);
+                // fscanf(fp,"%s", input);
                 fgets(input, 255, fp);
                 fgets(input, 255, fp);
-            printf("%s", input);
+                printf("%s", input);
                 if (repeat_send(fd, "Código: ", 8) == -1) {
                     perror("send");
                     return 1;
@@ -495,7 +495,7 @@ int cod_titulo(int fd) {
                 fscanf(fp,"%s", input);
                 fgets(input, 255, fp);
                 fgets(input, 255, fp);
-            printf("%s", input);
+                printf("%s", input);
                 if (repeat_send(fd, "Título: ", 8) == -1) {
                     perror("send");
                     return 1;
@@ -505,10 +505,13 @@ int cod_titulo(int fd) {
                     perror("send");
                     return 1;
                 }
-
-
             }
         }
+
+        if (repeat_send(fd, "done\n", 11) == -1) {
+                perror("send");
+                return 1;
+            }
     }
 }
 

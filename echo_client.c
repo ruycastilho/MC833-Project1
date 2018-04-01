@@ -273,6 +273,17 @@ int main(int argc, char *argv[]) {
                 buf[numbytes] = '\0';
                 printf("client: received '%s'\n",buf);
             } while (strcmp(buf, "done\n") != 0);
+        }
+
+        else if (strcmp(selected_option, "4") == 0) {
+            do {
+                if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+                    perror("recv");
+                    exit(1);
+                }
+                buf[numbytes] = '\0';
+                printf("client: received '%s'\n",buf);
+            } while (strcmp(buf, "done\n") != 0);
             printf("sai do while\n");
         }
 
