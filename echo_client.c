@@ -13,7 +13,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-#define PORT "3492" // the port client will be connecting to
+#define PORT "3491" // the port client will be connecting to
 #define MAXDATASIZE 1000 // max number of bytes we can get at once
 
 // get sockaddr, IPv4 or IPv6:
@@ -166,6 +166,7 @@ int main(int argc, char *argv[]) {
         if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
             perror("recv");
             exit(1);
+
         }
 
         buf[numbytes] = '\0';
