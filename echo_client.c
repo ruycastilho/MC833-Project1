@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
     freeaddrinfo(servinfo); // all done with this structure
 
     // -----------------------------------------------------------------------------------------------------------------------------------------
-    
+
     do {
 
         printf("esperando mensagem\n");
@@ -152,9 +152,7 @@ int main(int argc, char *argv[]) {
         if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
             perror("recv");
             exit(1);
-        }   
-
-        printf("depois do recv\n");
+        }
 
         buf[numbytes] = '\0';
         printf("client: received '%s'\n",buf);
@@ -174,8 +172,66 @@ int main(int argc, char *argv[]) {
     } while (strcmp(buf, "Erro na validacao.\n") == 0);
 
 
+    int first_time = 0;
+    for (;;) {
+
+        if (first_time == 1) {
+            printf("waiting for msg\n");
+            if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+                perror("recv");
+                exit(1);
+            }
+
+            buf[numbytes] = '\0';
+            printf("client: received '%s'\n",buf);
+        }
+
+        char selected_option[32];
+        fgets(selected_option, 32, stdin);
+        for (int i = 32; i > 0; i--) {
+            if (selected_option[i] == '\n') {
+                selected_option[i] = '\0';
+            }
+        }
+        if (send(sockfd, selected_option, 32, 0) == -1) {
+            perror("send");
+            return -1;
+        }
+
+        if (strcmp(selected_option, "7") == 0) {
+            ;
+        }
+        else if (strcmp(selected_option, "1") == 0) {
+            if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+                perror("recv");
+                exit(1);
+            }
+            buf[numbytes] = '\0';
+            printf("client: received '%s'\n",buf);
 
 
+            char subj_name[32];
+            fgets(subj_name, 32, stdin);
+            for (int i = 32; i > 0; i--) {
+                if (subj_name[i] == '\n') {
+                    subj_name[i] = '\0';
+                }
+            }
+            if (send(sockfd, subj_name, 32, 0) == -1) {
+                perror("send");
+                return -1;
+            }
+
+            if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+                perror("recv");
+                exit(1);
+            }
+            buf[numbytes] = '\0';
+            printf("client: received '%s'\n",buf);
+        }
+
+        first_time = 1;
+    }
 
     // fgets(username, 32, stdin);
     // for (int i = 32; i > 0; i--) {
@@ -215,48 +271,45 @@ int main(int argc, char *argv[]) {
     // }
 
 
+    // if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+    //     perror("recv");
+    //     exit(1);
+    // }
 
+    // buf[numbytes] = '\0';
+    // printf("client: received '%s'\n", buf);
 
-    if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
-        perror("recv");
-        exit(1);
-    }
+    // if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+    //     perror("recv");
+    //     exit(1);
+    // }
 
-    buf[numbytes] = '\0';
-    printf("client: received '%s'\n", buf);
+    // buf[numbytes] = '\0';
+    // printf("client: received '%s'\n", buf);
 
-    if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
-        perror("recv");
-        exit(1);
-    }
+    // if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+    //     perror("recv");
+    //     exit(1);
+    // }
 
-    buf[numbytes] = '\0';
-    printf("client: received '%s'\n", buf);
+    // buf[numbytes] = '\0';
+    // printf("client: received '%s'\n", buf);
 
+    // if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+    //     perror("recv");
+    //     exit(1);
+    // }
 
-    if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
-        perror("recv");
-        exit(1);
-    }
+    // buf[numbytes] = '\0';
+    // printf("client: received '%s'\n", buf);
 
-    buf[numbytes] = '\0';
-    printf("client: received '%s'\n", buf);
+    // if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+    //     perror("recv");
+    //     exit(1);
+    // }
 
-    if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
-        perror("recv");
-        exit(1);
-    }
-
-    buf[numbytes] = '\0';
-    printf("client: received '%s'\n", buf);
-
-    if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
-        perror("recv");
-        exit(1);
-    }
-
-    buf[numbytes] = '\0';
-    printf("client: received '%s'\n", buf);
+    // buf[numbytes] = '\0';
+    // printf("client: received '%s'\n", buf);
 
 
     close(sockfd);

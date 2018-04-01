@@ -112,16 +112,20 @@ int ementa(int fd) {
     char buffer[MAXDATASIZE];
     int numbytes;
 
+    printf("preparando para mandar 'Digite o código da disciplina'\n");
     if (send(fd, string, sizeof(string), 0) == -1) {
         perror("send");
         return -1;
 
     }
+    printf("'Digite o código da disciplina' enviado\n");
 
     if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
         perror("recv");
         return -1;
     }
+    buffer[numbytes] = '\0';
+    printf("client: received '%s'\n", buffer);
 
     FILE* fp ;
     char input[255];
@@ -150,7 +154,6 @@ int ementa(int fd) {
 
                                 fclose(fp);
                                 return 1;
-
                         }
                     }
 
@@ -719,7 +722,7 @@ int send_login_prof(int fd) {
 
     }
 
-    printf("%d\n", buffer[0] - '0');
+    printf("received: '%d'\n", buffer[0] - '0');
     switch (buffer[0] - '0') {
 
         case 1:
@@ -938,18 +941,14 @@ void send_func(int fd) {
     int login;
 
     do {
-        printf("comeco do do\n");
         login = send_func_login(fd);
 
         if (login == 1) {
     
             login = validate_login_prof(fd);
 
-
-            if (login != -1) { ////////////////////////////////////////////////////////////// esse if eh temporario
-                do {
-                    login = send_login_prof(fd);
-                } while (login != 1);
+            while (login == 1) {
+                login = send_login_prof(fd);
             }
         }
         else if (login == 2) {
