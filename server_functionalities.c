@@ -199,108 +199,135 @@ int infos(int fd) {
                     fscanf(fp,"%s", input);
                     fgets(input, 255, fp);
                     fgets(input, 255, fp);
-                printf("%s", input);
+                    printf("%s", input);
                     if (repeat_send(fd, "Título: ", 8) == -1) {
                         perror("send");
                         return 1;
                     }
                     
+                    usleep(3000000);
+
                     if (repeat_send(fd, input, sizeof(input)) == -1) {
                         perror("send");
                         return 1;
                     }
+
+                    usleep(3000000);
 
                     // Instituto
                     fscanf(fp,"%s", input);
 
                     fgets(input, 255, fp);
                     fgets(input, 255, fp);
-                printf("%s", input);
+                    printf("%s", input);
                     if (repeat_send(fd, "Instituto: ", 11) == -1) {
                         perror("send");
                         return 1;
                     }
                     
+                    usleep(3000000);
+
                     if (repeat_send(fd, input, sizeof(input)) == -1) {
                         perror("send");
                         return 1;
                     }
+
+                    usleep(3000000);
 
                     // Sala
                     fscanf(fp,"%s", input);
                     fgets(input, 255, fp);
                     fgets(input, 255, fp);
-                printf("%s", input);
+                    printf("%s", input);
                     if (repeat_send(fd, "Sala: ", 7) == -1) {
                         perror("send");
                         return 1;
                     }
                     
+                    usleep(3000000);
+                    
                     if (repeat_send(fd, input, sizeof(input)) == -1) {
                         perror("send");
                         return 1;
                     }
+
+                    usleep(3000000);
 
                     // Horário
                     fscanf(fp,"%s", input);
                     fgets(input, 255, fp);
                     fgets(input, 255, fp);
-                printf("%s", input);
+                    printf("%s", input);
                     if (repeat_send(fd, "Horário: ", 10) == -1) {
                         perror("send");
                         return 1;
                     }
                     
+                    usleep(3000000);
+
                     if (repeat_send(fd, input, sizeof(input)) == -1) {
                         perror("send");
                         return 1;
                     }
+
+                    usleep(3000000);
 
                     // Ementa
                     fscanf(fp,"%s", input);
                     fgets(input, 255, fp);
                     fgets(input, 255, fp);
-                printf("%s", input);
+                    printf("%s", input);
                     if (repeat_send(fd, "Horário: ", 11) == -1) {
                         perror("send");
                         return 1;
                     }
                     
+                    usleep(3000000);
+
                     if (repeat_send(fd, input, sizeof(input)) == -1) {
                         perror("send");
                         return 1;
                     }
 
+                    usleep(3000000);
 
                     // Prof
                     fscanf(fp,"%s", input);
                     fgets(input, 255, fp);
                     fgets(input, 255, fp);
-                printf("%s", input);
+                    printf("%s", input);
                     if (repeat_send(fd, "Professor: ", 11) == -1) {
                         perror("send");
                         return 1;
                     }
+                    
+                    usleep(3000000);
+
+                    if (repeat_send(fd, input, sizeof(input)) == -1) {
+                        perror("send");
+                        return 1;
+                    }
+
+                    usleep(3000000);
+
+                    // Comentario
+                    fscanf(fp,"%s", input);
+                    fgets(input, 255, fp);
+                    fgets(input, 255, fp);
+                    printf("%s", input);
+                    if (repeat_send(fd, "Comentario:", 11) == -1) {
+                        perror("send");
+                        return 1;
+                    }
+
+                    usleep(3000000);
                     
                     if (repeat_send(fd, input, sizeof(input)) == -1) {
                         perror("send");
                         return 1;
                     }
 
-                    // Comentario
-                    fscanf(fp,"%s", input);
-                    fgets(input, 255, fp);
-                    fgets(input, 255, fp);
-                printf("%s", input);
-                    if (repeat_send(fd, "Comentario:", 11) == -1) {
-                        perror("send");
-                        return 1;
-                    }
-                    
-                    if (repeat_send(fd, input, sizeof(input)) == -1) {
-                        perror("send");
-                        return 1;
-                    }
+                    usleep(3000000);
 
                     fclose(fp);
                     return 1;
@@ -716,7 +743,7 @@ int send_login_prof(int fd) {
 
     }
 
-    printf("%d\n", buffer[0] - '0');
+    printf("received: %d\n", buffer[0] - '0');
     switch (buffer[0] - '0') {
 
         case 1:

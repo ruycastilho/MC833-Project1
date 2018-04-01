@@ -231,11 +231,42 @@ int main(int argc, char *argv[]) {
             }
             buf[numbytes] = '\0';
             printf("client: received '%s'\n",buf);
+        }
+        else if (strcmp(selected_option, "2") == 0) {
+            if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+                perror("recv");
+                exit(1);
+            }
+            buf[numbytes] = '\0';
+            printf("client: received '%s'\n",buf);
 
-            usleep(3000000);
+
+            char subj_name[32];
+            fgets(subj_name, 32, stdin);
+            for (int i = 32; i > 0; i--) {
+                if (subj_name[i] == '\n') {
+                    subj_name[i] = '\0';
+                }
+            }
+            if (send(sockfd, subj_name, 32, 0) == -1) {
+                perror("send");
+                return -1;
+            }
+
+            for (int i = 0; i < 14; i++) {
+                if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+                    perror("recv");
+                    exit(1);
+                }
+                buf[numbytes] = '\0';
+                printf("client: received '%s'\n",buf);
+
+                usleep(3000000);
+            }
+
         }
 
-
+        usleep(3000000);
 
         first_time = 1;
     }
