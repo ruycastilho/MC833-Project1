@@ -30,6 +30,71 @@ void receive_func() {
 
 }
 
+int choose_opt (int sockfd) {
+    char buf[MAXDATASIZE];
+    int numbytes;
+
+    do {
+        char choice[10];
+        fgets(choice, 10, stdin);
+        for (int i = 10; i > 0; i--) {
+            if (choice[i] == '\n') {
+                choice[i] = '\0';
+                break;
+            }
+        }
+        if (send(sockfd, choice, 10, 0) == -1) {
+            perror("send");
+            return -1;
+        }
+
+        if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+            perror("recv");
+            exit(1);
+        }
+        buf[numbytes] = '\0';
+        printf("server: received '%s'\n",buf);
+
+    } while (strcmp(buf, "Por favor, digite 1, 2 ou 3.\n") == 0);
+
+    return 0;
+}
+
+int input_user_and_pass (int sockfd) {
+    char buf[MAXDATASIZE];
+    int numbytes;
+
+    char username[32];
+    fgets(username, 32, stdin);
+    for (int i = 32; i > 0; i--) {
+        if (username[i] == '\n') {
+            username[i] = '\0';
+        }
+    }
+    printf("username: '%s'\n", username);
+    if (send(sockfd, username, 32, 0) == -1) {
+        perror("send");
+        return -1;
+
+    }
+
+    char password[32];
+    fgets(password, 32, stdin);
+    for (int i = 32; i > 0; i--) {
+        if (password[i] == '\n') {
+            password[i] = '\0';
+        }
+    }
+    printf("password: '%s'\n", password);
+    if (send(sockfd, password, 32, 0) == -1) {
+        perror("send");
+        return -1;
+
+    }
+
+    return 0;
+}
+
 int main(int argc, char *argv[]) {
     int sockfd, numbytes;
     char buf[MAXDATASIZE];
@@ -78,115 +143,76 @@ int main(int argc, char *argv[]) {
     printf("client: connecting to %s\n", s);
     freeaddrinfo(servinfo); // all done with this structure
 
-
-    if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
-        perror("recv");
-        exit(1);
-    }
-
-    buf[numbytes] = '\0';
-    printf("client: received '%s'\n",buf);
+    // -----------------------------------------------------------------------------------------------------------------------------------------
     
     do {
-        char choice[10];
-        fgets(choice, 10, stdin);
-        for (int i = 10; i > 0; i--) {
-            if (choice[i] == '\n') {
-                choice[i] = '\0';
-                break;
-            }
-        }
-        if (send(sockfd, choice, 10, 0) == -1) {
-            perror("send");
-            return -1;
-        }
+
+        printf("esperando mensagem\n");
+
+        if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+            perror("recv");
+            exit(1);
+        }   
+
+        printf("depois do recv\n");
+
+        buf[numbytes] = '\0';
+        printf("client: received '%s'\n",buf);
+
+        int choose_opt_ret = choose_opt(sockfd);
+
+        int input_user_and_pass_ret = input_user_and_pass(sockfd);
 
         if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
             perror("recv");
             exit(1);
         }
+
         buf[numbytes] = '\0';
-        printf("server: received '%s'\n",buf);
+        printf("client: received '%s'\n",buf);
 
-    } while (strcmp(buf, "Por favor, digite 1 ou 2.\n") == 0);
-
-    char username[32];
-    fgets(username, 32, stdin);
-    for (int i = 32; i > 0; i--) {
-        if (username[i] == '\n') {
-            username[i] = '\0';
-            break;
-        }
-    }
-    printf("username: '%s'\n", username);
-    if (send(sockfd, username, 32, 0) == -1) {
-        perror("send");
-        return -1;
-
-    }
-
-    char password[32];
-    fgets(password, 32, stdin);
-    for (int i = 32; i > 0; i--) {
-        if (password[i] == '\n') {
-            password[i] = '\0';
-            break;
-        }
-    }
-    printf("password: '%s'\n", password);
-    if (send(sockfd, password, 32, 0) == -1) {
-        perror("send");
-        return -1;
-
-    }
-
-    // --------------
-
-    if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
-        perror("recv");
-        exit(1);
-    }
-
-    buf[numbytes] = '\0';
-    printf("client: received '%s'\n",buf);
+    } while (strcmp(buf, "Erro na validacao.\n") == 0);
 
 
-    fgets(username, 32, stdin);
-    for (int i = 32; i > 0; i--) {
-        if (username[i] == '\n') {
-            username[i] = '\0';
-            break;
-        }
-    }
-    printf("username: '%s'\n", username);
-    if (send(sockfd, username, 32, 0) == -1) {
-        perror("send");
-        return -1;
-
-    }
 
 
-    if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
-        perror("recv");
-        exit(1);
-    }
 
-    buf[numbytes] = '\0';
-    printf("client: received '%s'\n", buf);
+    // fgets(username, 32, stdin);
+    // for (int i = 32; i > 0; i--) {
+    //     if (username[i] == '\n') {
+    //         username[i] = '\0';
+    //         break;
+    //     }
+    // }
+    // printf("username: '%s'\n", username);
+    // if (send(sockfd, username, 32, 0) == -1) {
+    //     perror("send");
+    //     return -1;
 
-    fgets(username, 32, stdin);
-    for (int i = 32; i > 0; i--) {
-        if (username[i] == '\n') {
-            username[i] = '\0';
-            break;
-        }
-    }
-    printf("username: '%s'\n", username);
-    if (send(sockfd, username, 32, 0) == -1) {
-        perror("send");
-        return -1;
+    // }
 
-    }
+
+    // if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+    //     perror("recv");
+    //     exit(1);
+    // }
+
+    // buf[numbytes] = '\0';
+    // printf("client: received '%s'\n", buf);
+
+    // fgets(username, 32, stdin);
+    // for (int i = 32; i > 0; i--) {
+    //     if (username[i] == '\n') {
+    //         username[i] = '\0';
+    //         break;
+    //     }
+    // }
+    // printf("username: '%s'\n", username);
+    // if (send(sockfd, username, 32, 0) == -1) {
+    //     perror("send");
+    //     return -1;
+
+    // }
 
 
 

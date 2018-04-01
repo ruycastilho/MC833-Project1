@@ -44,7 +44,7 @@ void *get_in_addr(struct sockaddr *sa) {
 }
 
 
-int repeat_send(int fd, void *buffer, int size)
+int repeat_send(int fd, const void *buffer, int size)
 {
     char *string = (char*) buffer;
 
@@ -63,15 +63,16 @@ int repeat_send(int fd, void *buffer, int size)
 
 int send_func_login(int fd) {
 
-    char string[156] = "Boas vindas ao Sistema de Disciplinas da UNICAMP\nSe deseja logar como professor, digite 1. Se deseja logar como aluno, digite 2. Se deseja sair, digite 3.\n";
+    char string[] = "Boas vindas ao Sistema de Disciplinas da UNICAMP\nSe deseja logar como professor, digite 1. Se deseja logar como aluno, digite 2. Se deseja sair, digite 3.\n";
     char buffer[MAXDATASIZE];
     int numbytes;
     
-    if (repeat_send(fd, string, sizeof(string)) == -1) {
+    if ((numbytes = send(fd, string, sizeof(string), 0)) == -1) { // trocando repeat_send por send para fins de testeaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         perror("send");
         return -1;
 
     }
+    printf("ja dei boas vindas ao sistema, %d bytes mandados\n", numbytes);
 
     if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
         perror("recv");
@@ -81,7 +82,7 @@ int send_func_login(int fd) {
     buffer[numbytes] = '\0';
     printf("server: received '%s'\n",buffer);
 
-    char erro[29] = "Por favor, digite 1, 2 ou 3.\n";
+    char erro[] = "Por favor, digite 1, 2 ou 3.\n";
     while (strcmp(buffer, "1") != 0 && strcmp(buffer, "2") != 0 && strcmp(buffer, "3") != 0) {
         if (repeat_send(fd, erro, sizeof(erro)) == -1) {
             perror("send");
@@ -104,9 +105,10 @@ int send_func_login(int fd) {
     return -1;
 
 }
+
 int ementa(int fd) {
 
-    char string[31] = "Digite o código da disciplina\n";
+    char string[] = "Digite o código da disciplina\n";
     char buffer[MAXDATASIZE];
     int numbytes;
 
@@ -159,7 +161,7 @@ int ementa(int fd) {
 
     }
 
-    char string_erro[28] = "Disciplina não encontrada.\n";
+    char string_erro[] = "Disciplina não encontrada.\n";
 
     if (repeat_send(fd, string_erro, sizeof(string_erro)) == -1) {
         perror("send");
@@ -173,7 +175,7 @@ int ementa(int fd) {
 
 int infos(int fd) {
 
-    char string[31] = "Digite o código da disciplina\n";
+    char string[] = "Digite o código da disciplina\n";
     char buffer[MAXDATASIZE];
     int numbytes;
 
@@ -316,7 +318,7 @@ int infos(int fd) {
 
     }
 
-    char string_erro[28] = "Disciplina não encontrada.\n";
+    char string_erro[] = "Disciplina não encontrada.\n";
 
     if (repeat_send(fd, string_erro, sizeof(string_erro)) == -1) {
         perror("send");
@@ -520,7 +522,7 @@ int cod_titulo(int fd) {
 int escrever_com(int fd) {
 
 
-    char string[31] = "Digite o código da disciplina\n";
+    char string[] = "Digite o código da disciplina\n";
     char buffer[MAXDATASIZE];
     int numbytes;
 
@@ -603,7 +605,7 @@ int escrever_com(int fd) {
 
     }
 
-    char string_erro[28] = "Disciplina não encontrada.\n";
+    char string_erro[] = "Disciplina não encontrada.\n";
 
     if (repeat_send(fd, string_erro, sizeof(string_erro)) == -1) {
         perror("send");
@@ -618,7 +620,7 @@ int escrever_com(int fd) {
 int ler_com(int fd) {
 
 
-    char string[31] = "Digite o código da disciplina\n";
+    char string[] = "Digite o código da disciplina\n";
     char buffer[MAXDATASIZE];
     int numbytes;
 
@@ -671,7 +673,7 @@ int ler_com(int fd) {
 
     }
 
-    char string_erro[28] = "Disciplina não encontrada.\n";
+    char string_erro[] = "Disciplina não encontrada.\n";
 
     if (repeat_send(fd, string_erro, sizeof(string_erro)) == -1) {
         perror("send");
@@ -686,7 +688,7 @@ int ler_com(int fd) {
 
 int send_login_prof(int fd) {
 
-    char string[486] = "Olá!\nDigite o número da funcionalidade que deseja:\n1)Receber ementa de uma disciplina a partir do seu código\n2)Receber todas as informações de uma disciplina a partir do seu código\n3)Listar todas as informações de todas as disciplinas\n4)Listar todos os códigos de disciplinas com seus respectivos títulos\n5)Escrever comentário sobre próxima aula de uma de suas disciplinas\n6)Receber o comentário da próxima aula de uma disciplina a partir de seu código\n7)Fechar conexão.";
+    char string[] = "Olá!\nDigite o número da funcionalidade que deseja:\n1)Receber ementa de uma disciplina a partir do seu código\n2)Receber todas as informações de uma disciplina a partir do seu código\n3)Listar todas as informações de todas as disciplinas\n4)Listar todos os códigos de disciplinas com seus respectivos títulos\n5)Escrever comentário sobre próxima aula de uma de suas disciplinas\n6)Receber o comentário da próxima aula de uma disciplina a partir de seu código\n7)Fechar conexão.";
     char buffer[MAXDATASIZE];
     int numbytes;
 
@@ -701,7 +703,7 @@ int send_login_prof(int fd) {
         return -1;
     }
 
-    char erro[37] = "Por favor, digite números de 1 a 7.\n";
+    char erro[] = "Por favor, digite números de 1 a 7.\n";
 
     while (strcmp(buffer, "1") != 0 && strcmp(buffer, "2") != 0 && strcmp(buffer, "3") != 0 && strcmp(buffer, "4") != 0 && strcmp(buffer, "5") != 0 && strcmp(buffer, "6") != 0 && strcmp(buffer, "7") != 0) {
         if (send(fd, erro, sizeof(erro), 0) == -1) {
@@ -811,21 +813,22 @@ int send_login_prof(int fd) {
 
 int validate_login_prof(int fd) {
 
-    char string[52] = "Ola!\nDigite seu nome e senha, em linhas separadas.\n";
+    char string[] = "Ola!\nDigite seu nome e senha, em linhas separadas.\n";
     char nome[MAXDATASIZE];
     char senha[MAXDATASIZE];
     int numbytes;
 
-    if (repeat_send(fd, string, 52) == -1) {
+    printf("comeco da funcao validate login prof\n");
+    if (repeat_send(fd, string, 53) == -1) {
         perror("send");
         return -1;
     }
-
+    printf("depois do send\n");
     if ((numbytes = recv(fd, nome, MAXDATASIZE-1, 0)) == -1) {
         perror("recv");
         return -1;
     }
-
+    printf("depois do recv\n");
 
     nome[numbytes] = '\0';
     printf("server: received '%s'\n",nome);
@@ -848,7 +851,7 @@ int validate_login_prof(int fd) {
     if (fp = fopen(PROFESSORS, "r")) {
         // printf("dsadasda\n");
 
-        while (fscanf(fp,"%s %s", string_nome, string_senha) ) {
+        while (fscanf(fp,"%s %s", string_nome, string_senha) != EOF ) {
             // printf("%s %s\n", string_nome, string_senha);
 
             if (strcmp(string_nome, nome) == 0 && strcmp(string_senha, senha) == 0 ) {
@@ -863,7 +866,7 @@ int validate_login_prof(int fd) {
     }
 
 
-    char string_erro[21] = "Erro na validação.\n";
+    char string_erro[] = "Erro na validacao.\n";
 
     if (repeat_send(fd, string_erro, 20) == -1) {
         perror("send");
@@ -877,7 +880,7 @@ int validate_login_prof(int fd) {
 }
 int validate_login_student(int fd) {
 
-    char string[52] = "Ola!\nDigite seu nome e senha, em linhas separadas.\n";
+    char string[] = "Ola!\nDigite seu nome e senha, em linhas separadas.\n";
     char nome[MAXDATASIZE];
     char senha[MAXDATASIZE];
     int numbytes;
@@ -891,7 +894,6 @@ int validate_login_student(int fd) {
         perror("recv");
         return -1;
     }
-
 
     nome[numbytes] = '\0';
     printf("server: received '%s'\n",nome);
@@ -935,18 +937,20 @@ void send_func(int fd) {
 
     int login;
 
-    while (login != -1) {
-
+    do {
+        printf("comeco do do\n");
         login = send_func_login(fd);
 
         if (login == 1) {
+    
             login = validate_login_prof(fd);
-            
-            while (login != -1) {
 
-                login = send_login_prof(fd);
+
+            if (login != -1) { ////////////////////////////////////////////////////////////// esse if eh temporario
+                do {
+                    login = send_login_prof(fd);
+                } while (login != 1);
             }
-
         }
         else if (login == 2) {
             login = validate_login_student(fd);
@@ -959,7 +963,7 @@ void send_func(int fd) {
 
         }
 
-    }
+    } while (login == -1);
 
 }
 
