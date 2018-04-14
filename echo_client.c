@@ -200,7 +200,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (strcmp(selected_option, "7") == 0) {
-            ;
+            break;
         }
         else if (strcmp(selected_option, "1") == 0) {
             if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
@@ -337,6 +337,38 @@ int main(int argc, char *argv[]) {
             }
             buf[numbytes] = '\0';
             printf("client: received '%s'\n",buf);
+        }
+
+        else if (strcmp(selected_option, "6") == 0) {
+            // recebe a mensagem 'digite o cóodigo da disciplina'
+            if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+                perror("recv");
+                exit(1);
+            }
+            buf[numbytes] = '\0';
+            printf("client: received '%s'\n",buf);
+
+            // le e envia o codigo da disciplina
+            char subj_name[32];
+            fgets(subj_name, 32, stdin);
+            for (int i = 32; i > 0; i--) {
+                if (subj_name[i] == '\n') {
+                    subj_name[i] = '\0';
+                }
+            }
+            if (send(sockfd, subj_name, 32, 0) == -1) {
+                perror("send");
+                return -1;
+            }
+
+            // recebe a mensagem o comentario da disciplina
+            if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+                perror("recv");
+                exit(1);
+            }
+            buf[numbytes] = '\0';
+            printf("client: received '%s'\n",buf);
+
         }
 
         first_time = 1;
