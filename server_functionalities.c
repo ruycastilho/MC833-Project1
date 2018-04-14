@@ -56,7 +56,7 @@ int send_func_login(int fd) {
     char string[] = "Boas vindas ao Sistema de Disciplinas da UNICAMP\nSe deseja logar como professor, digite 1. Se deseja logar como aluno, digite 2. Se deseja sair, digite 3.\n";
     char buffer[MAXDATASIZE];
     int numbytes;
-    
+
     if ((numbytes = send(fd, string, sizeof(string), 0)) == -1) { // trocando repeat_send por send para fins de testeaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         perror("send");
         return -1;
@@ -130,11 +130,11 @@ int ementa(int fd) {
                 if (strcmp(input, buffer) == 0) {
 
                     while (fscanf(fp,"%s", input) ) {
-                    
+
                         if (strcmp(input, "[EMENTA]") == 0  ) {
                             fgets(input, 255, fp);
                             fgets(input, 255, fp);
-                                
+
                                 printf("preparendo para mandar e ementa\n");
                                 if (repeat_send(fd, input, sizeof(input)) == -1) {
                                     perror("send");
@@ -194,7 +194,7 @@ int infos(int fd) {
                 fscanf(fp,"%s", input);
 
                 if (strcmp(input, buffer) == 0) {
-                
+
                     // Título
                     fscanf(fp,"%s", input);
                     fgets(input, 255, fp);
@@ -235,7 +235,7 @@ int infos(int fd) {
                         perror("send");
                         return 1;
                     }
-                    
+
                     if (repeat_send(fd, input, sizeof(input)) == -1) {
                         perror("send");
                         return 1;
@@ -295,7 +295,7 @@ int infos(int fd) {
                         perror("send");
                         return 1;
                     }
-                    
+
                     if (repeat_send(fd, input, sizeof(input)) == -1) {
                         perror("send");
                         return 1;
@@ -342,7 +342,7 @@ int todas_infos(int fd) {
                     perror("send");
                     return 1;
                 }
-                
+
                 if (repeat_send(fd, input, sizeof(input)) == -1) {
                     perror("send");
                     return 1;
@@ -357,7 +357,7 @@ int todas_infos(int fd) {
                     perror("send");
                     return 1;
                 }
-                
+
                 if (repeat_send(fd, input, sizeof(input)) == -1) {
                     perror("send");
                     return 1;
@@ -373,7 +373,7 @@ int todas_infos(int fd) {
                     perror("send");
                     return 1;
                 }
-                
+
                 if (repeat_send(fd, input, sizeof(input)) == -1) {
                     perror("send");
                     return 1;
@@ -388,7 +388,7 @@ int todas_infos(int fd) {
                     perror("send");
                     return 1;
                 }
-                
+
                 if (repeat_send(fd, input, sizeof(input)) == -1) {
                     perror("send");
                     return 1;
@@ -403,7 +403,7 @@ int todas_infos(int fd) {
                     perror("send");
                     return 1;
                 }
-                
+
                 if (repeat_send(fd, input, sizeof(input)) == -1) {
                     perror("send");
                     return 1;
@@ -418,7 +418,7 @@ int todas_infos(int fd) {
                     perror("send");
                     return 1;
                 }
-                
+
                 if (repeat_send(fd, input, sizeof(input)) == -1) {
                     perror("send");
                     return 1;
@@ -434,7 +434,7 @@ int todas_infos(int fd) {
                     perror("send");
                     return 1;
                 }
-                
+
                 if (repeat_send(fd, input, sizeof(input)) == -1) {
                     perror("send");
                     return 1;
@@ -449,7 +449,7 @@ int todas_infos(int fd) {
                     perror("send");
                     return 1;
                 }
-                
+
                 if (repeat_send(fd, input, sizeof(input)) == -1) {
                     perror("send");
                     return 1;
@@ -485,7 +485,7 @@ int cod_titulo(int fd) {
                     perror("send");
                     return 1;
                 }
-                
+
                 if (repeat_send(fd, input, sizeof(input)) == -1) {
                     perror("send");
                     return 1;
@@ -500,7 +500,7 @@ int cod_titulo(int fd) {
                     perror("send");
                     return 1;
                 }
-                
+
                 if (repeat_send(fd, input, sizeof(input)) == -1) {
                     perror("send");
                     return 1;
@@ -536,31 +536,32 @@ int escrever_com(int fd) {
     FILE* fp ;
     char input[255];
 
-    if (fp = fopen(COURSES, "r")) {
+    if (fp = fopen(COURSES, "r+")) {
         // printf("dsadasda\n");
 
-        while (fscanf(fp,"%s", input) ) {
+        while (fscanf(fp,"%s", input) != EOF) {
 
             if (strcmp(input, "[CÓDIGO]") == 0  ) {
                 fscanf(fp,"%s", input);
 
                 if (strcmp(input, buffer) == 0) {
 
-                    while (fscanf(fp,"%s", input) ) {
-                    
+                    while (fscanf(fp,"%s", input) != EOF) {
+
                         if (strcmp(input, "[NOME_PROFESSOR]") == 0  ) {
                             fgets(input, 255, fp);
-                            fgets(input, 255, fp);
+                            // fgets(input, 255, fp);
                             fscanf(fp,"%s", input);
 
                             if (strcmp(login_nome, input) == 0) {
+                            printf("segundo if\n");
 
                                 while (fscanf(fp,"%s", input) ) {
-                                
+
                                     if (strcmp(input, "[COMENTARIO]") == 0  ) {
                                         fgets(input, 255, fp);
 
-                                    
+
                                         char string[23] = "Digite o comentário:\n";
                                         char buffer[MAXDATASIZE];
                                         int numbytes;
@@ -575,15 +576,17 @@ int escrever_com(int fd) {
                                             perror("recv");
                                             return -1;
                                         }
+                                        printf("'received: '%s'\n", buffer);
 
                                         fprintf(fp, "%s", buffer);
 
-                                        if (repeat_send(fd, "Comentário adicionado.", 23) == -1) {
+                                        fclose(fp);
+
+                                        if (repeat_send(fd, "Comentario adicionado.", 23) == -1) {
                                             perror("send");
                                             return 1;
                                         }
 
-                                        fclose(fp);
                                         return 1;
                                     }
                                 }
@@ -646,11 +649,11 @@ int ler_com(int fd) {
                 if (strcmp(input, buffer) == 0) {
 
                     while (fscanf(fp,"%s", input) ) {
-                    
+
                         if (strcmp(input, "[COMENTARIO]") == 0  ) {
                             fgets(input, 255, fp);
                             fgets(input, 255, fp);
-                            
+
                                 if (repeat_send(fd, input, sizeof(input)) == -1) {
                                     perror("send");
                                     return 1;
@@ -689,7 +692,7 @@ int send_login_prof(int fd) {
     int numbytes;
 
     printf("preparando para enviar opcoes\n");
-    if ((numbytes = send(fd, string, sizeof(string), 0)) == -1) {
+    if ((numbytes = send(fd, string, sizeof(string), 0)) == -1) { ////////////// repeat_send trocado por send
         perror("send");
         return -1;
 
@@ -932,7 +935,7 @@ void send_func(int fd) {
         login = send_func_login(fd);
 
         if (login == 1) {
-    
+
             login = validate_login_prof(fd);
 
             if (login != -1) {
@@ -941,7 +944,7 @@ void send_func(int fd) {
                 } while (login == 1);
             }
 
-            return;
+            return; /*?????*/
 
         }
         else if (login == 2) {
@@ -962,3 +965,12 @@ void send_func(int fd) {
     } while (login == -1);
 
 }
+
+
+/*
+STRUCTS para disciplina, mandar numero de bytes certo e dar cast numa struct no cliente
+controlar flow de send no servidor, pesquisar como
+header com tamanho da mensagem
+
+
+*/

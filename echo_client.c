@@ -26,7 +26,7 @@ void *get_in_addr(struct sockaddr *sa)
 }
 
 void receive_func() {
-    
+
 
 }
 
@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
     struct addrinfo hints, *servinfo, *p;
     int rv;
     char s[INET6_ADDRSTRLEN];
-    
+
     if (argc != 2) {
         fprintf(stderr,"usage: client hostname\n");
         exit(1);
@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
-    
+
     if ((rv = getaddrinfo(argv[1], PORT, &hints, &servinfo)) != 0) {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
         return 1;
@@ -285,6 +285,58 @@ int main(int argc, char *argv[]) {
                 printf("client: received '%s'\n",buf);
             } while (strcmp(buf, "done\n") != 0);
             printf("sai do while\n");
+        }
+
+        else if (strcmp(selected_option, "5") == 0) {
+            // recebe a mensagem "diigte o codigo da disciplina"
+            if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+                perror("recv");
+                exit(1);
+            }
+            buf[numbytes] = '\0';
+            printf("client: received '%s'\n",buf);
+
+            // le e envia o codigo da disciplina
+            char subj_name[32];
+            fgets(subj_name, 32, stdin);
+            for (int i = 32; i > 0; i--) {
+                if (subj_name[i] == '\n') {
+                    subj_name[i] = '\0';
+                }
+            }
+            if (send(sockfd, subj_name, 32, 0) == -1) {
+                perror("send");
+                return -1;
+            }
+
+            // recebe a mensagem "digite o comentario"
+            if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+                perror("recv");
+                exit(1);
+            }
+            buf[numbytes] = '\0';
+            printf("client: received '%s'\n",buf);
+
+            // le envia a mensagem com o comentario sobre a disciplina
+            char com[81];
+            fgets(com, 81, stdin);
+            for (int i = 81; i > 0; i--) {
+                if (com[i] == '\n') {
+                    com[i] = '\0';
+                }
+            }
+            if (send(sockfd, com, 81, 0) == -1) {
+                perror("send");
+                return -1;
+            }
+
+            // recebe a mensagem "Comentario adicionado"
+            if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+                perror("recv");
+                exit(1);
+            }
+            buf[numbytes] = '\0';
+            printf("client: received '%s'\n",buf);
         }
 
         first_time = 1;
