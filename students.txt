@@ -1,4 +1,0 @@
-BLA1 1
-BLA2 2
-BLA3 3
-BLA4 4

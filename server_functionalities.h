@@ -12,15 +12,17 @@
 #include <signal.h>
 #include <string.h>
 
-#define STUDENTS "students.txt"
-#define PROFESSORS "professors.txt"
-#define COURSES "courses.txt"
+#define USERS "users.dat"
+#define COURSES "courses.dat"
 #define MAXDATASIZE 10000
+#define NAME_LENGTH 6
+#define PWD_LENGTH 2
+#define COMMENT_LENGTH 50
 
 typedef struct {
 
-    char name[33];
-    char pwd[33];
+    char name[NAME_LENGTH];
+    char pwd[PWD_LENGTH];
     int is_prof;
 
 } user;
@@ -33,8 +35,8 @@ typedef struct {
     char room[6];
     char schedule[50];
     char description[100];
-    char professor[33];
-    char comment[50];
+    char professor[NAME_LENGTH];
+    char comment[COMMENT_LENGTH];
 
 } course;
 
@@ -46,10 +48,9 @@ int ementa(int fd);
 int infos(int fd);
 int todas_infos(int fd);
 int cod_titulo(int fd);
-int escrever_com(int fd);
+int escrever_com(user* prof, int fd);
 int ler_com(int fd);
-int send_login_prof(int fd);
-// int send_login_student(int fd);
-int validate_login_prof(int fd);
-int validate_login_student(int fd);
+int send_login(user* user_info, int fd);
+user* validate_login(int fd);
 void send_func(int fd);
+course* code_search(int fd);

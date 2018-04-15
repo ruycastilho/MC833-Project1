@@ -13,10 +13,7 @@
 #include <string.h>
 #include "server_functionalities.h"
 
-char login_nome[255];
-
-void sigchld_handler(int s)
-{
+void sigchld_handler(int s) {
     // waitpid() might overwrite errno, so we save and restore it:
     int saved_errno = errno;
 
@@ -34,8 +31,7 @@ void *get_in_addr(struct sockaddr *sa) {
 }
 
 
-int repeat_send(int fd, const void *buffer, int size)
-{
+int repeat_send(int fd, const void *buffer, int size) {
     char *string = (char*) buffer;
 
     while (size > 0)
@@ -51,9 +47,268 @@ int repeat_send(int fd, const void *buffer, int size)
     return 1;
 }
 
+
+course* code_search(int fd) {
+    char string[] = "Digite o código da disciplina:";
+    char buffer[MAXDATASIZE];
+    int numbytes;
+
+    if (send(fd, string, sizeof(string), 0) == -1) {
+        perror("send");
+        return NULL;
+
+    }
+
+    if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
+        perror("recv");
+        return NULL;
+    }
+
+    FILE* courses_f ;
+
+    if (courses_f = fopen(COURSES, "rb")) {
+        course* existing_course = malloc(sizeof(course));
+
+        while ( fread(existing_course, sizeof(course), 1, courses_f) ) {
+
+            if (strcmp(existing_course->code, buffer) == 0 ) {
+                free(existing_course);
+                fclose(courses_f);
+                return existing_course;
+   
+            }
+        }
+
+        free(existing_course);
+        fclose(courses_f);
+
+        char notfound_error[] = "Disciplina não encontrada.";
+
+        if (repeat_send(fd, notfound_error, sizeof(notfound_error)) == -1) {
+            perror("send");
+            fclose(courses_f);
+            return NULL;
+        }
+    }
+
+    char file_error[] = "Erro ao abrir arquivo.";
+
+    if (repeat_send(fd, file_error, sizeof(file_error)) == -1) {
+        perror("send");
+        return NULL;
+    }
+
+    return NULL;
+
+}
+
+int ementa(int fd) {
+    course* course_info = code_search(fd);
+
+    if (course_info != NULL) {
+        if (repeat_send(fd, course_info->description, sizeof(course_info->description)) == -1) {
+            perror("send");
+            free(course_info);
+            return -1;
+        }
+        return 1;
+    }
+
+    free(course_info);
+
+    return -1;
+
+}
+
+int infos(int fd) {
+
+    course* course_info = code_search(fd);
+
+    if (course_info != NULL) {
+        if (repeat_send(fd, course_info, sizeof(course)) == -1) {
+            perror("send");
+            free(course_info);
+            return -1;
+        }
+        return 1;
+    }
+
+    free(course_info);
+
+    return -1;
+
+}
+
+int todas_infos(int fd) {
+    FILE* courses_f ;
+    course* existing_course = malloc(sizeof(course));
+
+    if (courses_f = fopen(COURSES, "rb")) {
+        // printf("dsadasda\n");
+
+        while ( fread(existing_course, sizeof(course), 1, courses_f) ) {
+                
+            if (repeat_send(fd, existing_course, sizeof(course)) == -1) {
+                perror("send");
+                free(existing_course);
+                fclose(courses_f);
+                return -1;
+            }
+        
+        }
+
+        free(existing_course);
+        fclose(courses_f);
+        return 1;
+
+    }
+
+    char file_error[] = "Erro ao abrir arquivo.\n";
+    free(existing_course);
+
+    if (repeat_send(fd, file_error, sizeof(file_error)) == -1) {
+        perror("send");
+        return -1;
+    }
+
+    return -1;
+
+}
+
+int escrever_com(user* prof, int fd) {
+    char string[] = "Digite o código da disciplina:";
+    char buffer[MAXDATASIZE];
+    int numbytes, found_course = 0, counter=0;
+
+    if (send(fd, string, sizeof(string), 0) == -1) {
+        perror("send");
+        return -1;
+
+    }
+
+    if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
+        perror("recv");
+        return -1;
+    }
+
+    FILE* courses_f ;
+    course* existing_course = malloc(sizeof(course));
+
+    if (courses_f = fopen(COURSES, "rb")) {
+
+        while ( fread(existing_course, sizeof(course), 1, courses_f) ) {
+
+            if (strcmp(existing_course->code, buffer) == 0 ) {
+                found_course = 1;
+                break;
+
+            }
+            counter++;
+
+        }
+
+        if (!found_course) {
+
+            free(existing_course);
+            fclose(courses_f);
+
+            char notfound_error[] = "Disciplina não encontrada.";
+
+            if (repeat_send(fd, notfound_error, sizeof(notfound_error)) == -1) {
+                perror("send");
+                return -1;
+            }   
+
+            return 1;
+        }
+
+    }
+    else {
+        char file_error[] = "Erro ao abrir arquivo.";
+
+        if (repeat_send(fd, file_error, sizeof(file_error)) == -1) {
+            perror("send");
+            return -1;
+        }
+
+    }
+
+    if (strcmp(existing_course->professor, prof->name) == 0) {
+
+        if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
+            perror("recv");
+            return -1;
+        }
+
+        char new_comment[COMMENT_LENGTH];
+        fseek(courses_f, counter*sizeof(course), SEEK_SET);
+        strcpy(existing_course->comment, new_comment);
+
+   
+
+        if ( fwrite(existing_course, sizeof(course), 1, courses_f) ) {
+            char feedback[] = "Comentario adicionado.";
+            free(existing_course);
+            fclose(courses_f);
+
+            if (repeat_send(fd, feedback, sizeof(feedback)) == -1) {
+                perror("send");
+                return -1;
+            }
+            return 1;
+        }
+        else {
+            char feedback[] = "Erro ao escrever no arquivo.";
+            free(existing_course);
+            fclose(courses_f);
+            
+            if (repeat_send(fd, feedback, sizeof(feedback)) == -1) {
+                perror("send");
+                return -1;
+            }
+        }
+
+
+
+    }
+    else {
+
+        char login_error[] = "Voce nao tem permissao para alterar comentarios dessa disciplina.";
+        free(existing_course);
+        fclose(courses_f);
+
+        if (repeat_send(fd, login_error, sizeof(login_error)) == -1) {
+            perror("send");
+            return -1;
+        }
+
+    }
+    
+    return -1;
+}
+
+int ler_com(int fd) {
+
+    course* course_info = code_search(fd);
+
+    if (course_info != NULL) {
+        if (repeat_send(fd, course_info->comment, sizeof(course_info->comment)) == -1) {
+            perror("send");
+            free(course_info);
+            return -1;
+        }
+        return 1;
+    }
+
+    free(course_info);
+
+    return -1;
+
+}
+
 int send_func_login(int fd) {
 
-    char string[] = "Boas vindas ao Sistema de Disciplinas da UNICAMP\nSe deseja logar como professor, digite 1. Se deseja logar como aluno, digite 2. Se deseja sair, digite 3.\n";
+    char string[] = "Boas vindas ao Sistema de Disciplinas da UNICAMP\nSe deseja logar digite 1. Se deseja sair, digite 2.";
     char buffer[MAXDATASIZE];
     int numbytes;
     
@@ -72,8 +327,8 @@ int send_func_login(int fd) {
     buffer[numbytes] = '\0';
     printf("server: received '%s'\n",buffer);
 
-    char erro[] = "Por favor, digite 1, 2 ou 3.\n";
-    while (strcmp(buffer, "1") != 0 && strcmp(buffer, "2") != 0 && strcmp(buffer, "3") != 0) {
+    char erro[] = "Por favor, digite 1 ou 2.";
+    while (strcmp(buffer, "1") != 0 && strcmp(buffer, "2") != 0) {
         if (repeat_send(fd, erro, sizeof(erro)) == -1) {
             perror("send");
             return -1;
@@ -88,628 +343,79 @@ int send_func_login(int fd) {
     if ( strcmp(buffer, "1") == 0) {
         return 1;
     }
-    else if ( strcmp(buffer, "2") == 0) {
-        return 2;
-    }
 
     return -1;
 
 }
 
-int ementa(int fd) {
+int send_login(user* user_info, int fd) {
 
-    char string[] = "Digite o código da disciplina\n";
+    char string_prof[] = "\nOlá!\nDigite o número da funcionalidade que deseja:\n1)Receber ementa de uma disciplina a partir do seu código\n2)Receber todas as informações de uma disciplina a partir do seu código\n3)Listar todas as informações de todas as disciplinas\n4)Listar todos os códigos de disciplinas com seus respectivos títulos\n5)Receber o comentário da próxima aula de uma disciplina a partir de seu código\n6)Escrever comentário sobre próxima aula de uma de suas disciplinas\n7)Fechar conexão";
+    char string_stud[] = "\nOlá!\nDigite o número da funcionalidade que deseja:\n1)Receber ementa de uma disciplina a partir do seu código\n2)Receber todas as informações de uma disciplina a partir do seu código\n3)Listar todas as informações de todas as disciplinas\n4)Listar todos os códigos de disciplinas com seus respectivos títulos\n5)Receber o comentário da próxima aula de uma disciplina a partir de seu código\n6)Fechar conexão";  
+    
     char buffer[MAXDATASIZE];
     int numbytes;
 
-    if (send(fd, string, sizeof(string), 0) == -1) {
-        perror("send");
-        return -1;
-
-    }
-
-    if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
-        perror("recv");
-        return -1;
-    }
-
-    FILE* fp ;
-    char input[255];
-
-    if (fp = fopen(COURSES, "r")) {
-        // printf("dsadasda\n");
-
-        while (fscanf(fp,"%s", input) ) {
-            // printf("%s %s\n", string_nome, string_senha);
-
-            if (strcmp(input, "[CÓDIGO]") == 0  ) {
-                fscanf(fp,"%s", input);
-
-                if (strcmp(input, buffer) == 0) {
-
-                    while (fscanf(fp,"%s", input) ) {
-                    
-                        if (strcmp(input, "[EMENTA]") == 0  ) {
-                            fgets(input, 255, fp);
-                            fgets(input, 255, fp);
-                            
-                                if (repeat_send(fd, input, sizeof(input)) == -1) {
-                                    perror("send");
-                                    return 1;
-                                }
-
-                                fclose(fp);
-                                return 1;
-
-                        }
-                    }
-
-                }
-
-            }
-        }
-
-    }
-
-    char string_erro[] = "Disciplina não encontrada.\n";
-
-    if (repeat_send(fd, string_erro, sizeof(string_erro)) == -1) {
-        perror("send");
-        return -1;
-    }
-
-
-    fclose(fp);
-    return -1;
-}
-
-int infos(int fd) {
-
-    char string[] = "Digite o código da disciplina\n";
-    char buffer[MAXDATASIZE];
-    int numbytes;
-
-    if (send(fd, string, sizeof(string), 0) == -1) {
-        perror("send");
-        return -1;
-
-    }
-
-    if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
-        perror("recv");
-        return -1;
-    }
-
-    FILE* fp ;
-    char input[255];
-
-    if (fp = fopen(COURSES, "r")) {
-
-        while (fscanf(fp,"%s", input) ) {
-            if (strcmp(input, "[CÓDIGO]") == 0  ) {
-                fscanf(fp,"%s", input);
-
-                if (strcmp(input, buffer) == 0) {
-                
-                    // Título
-                    fscanf(fp,"%s", input);
-                    fgets(input, 255, fp);
-                    fgets(input, 255, fp);
-                printf("%s", input);
-                    if (repeat_send(fd, "Título: ", 8) == -1) {
-                        perror("send");
-                        return 1;
-                    }
-                    
-                    if (repeat_send(fd, input, sizeof(input)) == -1) {
-                        perror("send");
-                        return 1;
-                    }
-
-                    // Instituto
-                    fscanf(fp,"%s", input);
-
-                    fgets(input, 255, fp);
-                    fgets(input, 255, fp);
-                printf("%s", input);
-                    if (repeat_send(fd, "Instituto: ", 11) == -1) {
-                        perror("send");
-                        return 1;
-                    }
-                    
-                    if (repeat_send(fd, input, sizeof(input)) == -1) {
-                        perror("send");
-                        return 1;
-                    }
-
-                    // Sala
-                    fscanf(fp,"%s", input);
-                    fgets(input, 255, fp);
-                    fgets(input, 255, fp);
-                printf("%s", input);
-                    if (repeat_send(fd, "Sala: ", 7) == -1) {
-                        perror("send");
-                        return 1;
-                    }
-                    
-                    if (repeat_send(fd, input, sizeof(input)) == -1) {
-                        perror("send");
-                        return 1;
-                    }
-
-                    // Horário
-                    fscanf(fp,"%s", input);
-                    fgets(input, 255, fp);
-                    fgets(input, 255, fp);
-                printf("%s", input);
-                    if (repeat_send(fd, "Horário: ", 10) == -1) {
-                        perror("send");
-                        return 1;
-                    }
-                    
-                    if (repeat_send(fd, input, sizeof(input)) == -1) {
-                        perror("send");
-                        return 1;
-                    }
-
-                    // Ementa
-                    fscanf(fp,"%s", input);
-                    fgets(input, 255, fp);
-                    fgets(input, 255, fp);
-                printf("%s", input);
-                    if (repeat_send(fd, "Horário: ", 11) == -1) {
-                        perror("send");
-                        return 1;
-                    }
-                    
-                    if (repeat_send(fd, input, sizeof(input)) == -1) {
-                        perror("send");
-                        return 1;
-                    }
-
-
-                    // Prof
-                    fscanf(fp,"%s", input);
-                    fgets(input, 255, fp);
-                    fgets(input, 255, fp);
-                printf("%s", input);
-                    if (repeat_send(fd, "Professor: ", 11) == -1) {
-                        perror("send");
-                        return 1;
-                    }
-                    
-                    if (repeat_send(fd, input, sizeof(input)) == -1) {
-                        perror("send");
-                        return 1;
-                    }
-
-                    // Comentario
-                    fscanf(fp,"%s", input);
-                    fgets(input, 255, fp);
-                    fgets(input, 255, fp);
-                printf("%s", input);
-                    if (repeat_send(fd, "Comentario:", 11) == -1) {
-                        perror("send");
-                        return 1;
-                    }
-                    
-                    if (repeat_send(fd, input, sizeof(input)) == -1) {
-                        perror("send");
-                        return 1;
-                    }
-
-                    fclose(fp);
-                    return 1;
-                }
-
-            }
-
-        }
-
-    }
-
-    char string_erro[] = "Disciplina não encontrada.\n";
-
-    if (repeat_send(fd, string_erro, sizeof(string_erro)) == -1) {
-        perror("send");
-        return -1;
-    }
-
-
-    fclose(fp);
-    return -1;
-
-}
-
-int todas_infos(int fd) {
-
-    FILE* fp ;
-    char input[255];
-
-    if (fp = fopen(COURSES, "r")) {
-
-        while (fscanf(fp,"%s", input) ) {
-            if (strcmp(input, "[CÓDIGO]") == 0  ) {
-
-                fscanf(fp,"%s", input);
-                fgets(input, 255, fp);
-                fgets(input, 255, fp);
-            printf("%s", input);
-                if (repeat_send(fd, "Código: ", 8) == -1) {
-                    perror("send");
-                    return 1;
-                }
-                
-                if (repeat_send(fd, input, sizeof(input)) == -1) {
-                    perror("send");
-                    return 1;
-                }
-
-                // Título
-                fscanf(fp,"%s", input);
-                fgets(input, 255, fp);
-                fgets(input, 255, fp);
-            printf("%s", input);
-                if (repeat_send(fd, "Título: ", 8) == -1) {
-                    perror("send");
-                    return 1;
-                }
-                
-                if (repeat_send(fd, input, sizeof(input)) == -1) {
-                    perror("send");
-                    return 1;
-                }
-
-                // Instituto
-                fscanf(fp,"%s", input);
-
-                fgets(input, 255, fp);
-                fgets(input, 255, fp);
-            printf("%s", input);
-                if (repeat_send(fd, "Instituto: ", 11) == -1) {
-                    perror("send");
-                    return 1;
-                }
-                
-                if (repeat_send(fd, input, sizeof(input)) == -1) {
-                    perror("send");
-                    return 1;
-                }
-
-                // Sala
-                fscanf(fp,"%s", input);
-                fgets(input, 255, fp);
-                fgets(input, 255, fp);
-            printf("%s", input);
-                if (repeat_send(fd, "Sala: ", 7) == -1) {
-                    perror("send");
-                    return 1;
-                }
-                
-                if (repeat_send(fd, input, sizeof(input)) == -1) {
-                    perror("send");
-                    return 1;
-                }
-
-                // Horário
-                fscanf(fp,"%s", input);
-                fgets(input, 255, fp);
-                fgets(input, 255, fp);
-            printf("%s", input);
-                if (repeat_send(fd, "Horário: ", 10) == -1) {
-                    perror("send");
-                    return 1;
-                }
-                
-                if (repeat_send(fd, input, sizeof(input)) == -1) {
-                    perror("send");
-                    return 1;
-                }
-
-                // Ementa
-                fscanf(fp,"%s", input);
-                fgets(input, 255, fp);
-                fgets(input, 255, fp);
-            printf("%s", input);
-                if (repeat_send(fd, "Horário: ", 11) == -1) {
-                    perror("send");
-                    return 1;
-                }
-                
-                if (repeat_send(fd, input, sizeof(input)) == -1) {
-                    perror("send");
-                    return 1;
-                }
-
-
-                // Prof
-                fscanf(fp,"%s", input);
-                fgets(input, 255, fp);
-                fgets(input, 255, fp);
-            printf("%s", input);
-                if (repeat_send(fd, "Professor: ", 11) == -1) {
-                    perror("send");
-                    return 1;
-                }
-                
-                if (repeat_send(fd, input, sizeof(input)) == -1) {
-                    perror("send");
-                    return 1;
-                }
-
-                // Comentario
-                fscanf(fp,"%s", input);
-                fgets(input, 255, fp);
-                fgets(input, 255, fp);
-            printf("%s", input);
-                if (repeat_send(fd, "Comentario:", 11) == -1) {
-                    perror("send");
-                    return 1;
-                }
-                
-                if (repeat_send(fd, input, sizeof(input)) == -1) {
-                    perror("send");
-                    return 1;
-                }
-
-
-
-            }
-
-        }
-
-    }
-
-    fclose(fp);
-    return 1;
-}
-
-int cod_titulo(int fd) {
-
-    FILE* fp ;
-    char input[255];
-
-    if (fp = fopen(COURSES, "r")) {
-
-        while (fscanf(fp,"%s", input) ) {
-            if (strcmp(input, "[CÓDIGO]") == 0  ) {
-
-                fscanf(fp,"%s", input);
-                fgets(input, 255, fp);
-                fgets(input, 255, fp);
-            printf("%s", input);
-                if (repeat_send(fd, "Código: ", 8) == -1) {
-                    perror("send");
-                    return 1;
-                }
-                
-                if (repeat_send(fd, input, sizeof(input)) == -1) {
-                    perror("send");
-                    return 1;
-                }
-
-                // Título
-                fscanf(fp,"%s", input);
-                fgets(input, 255, fp);
-                fgets(input, 255, fp);
-            printf("%s", input);
-                if (repeat_send(fd, "Título: ", 8) == -1) {
-                    perror("send");
-                    return 1;
-                }
-                
-                if (repeat_send(fd, input, sizeof(input)) == -1) {
-                    perror("send");
-                    return 1;
-                }
-
-
-            }
-        }
-    }
-}
-
-int escrever_com(int fd) {
-
-
-    char string[] = "Digite o código da disciplina\n";
-    char buffer[MAXDATASIZE];
-    int numbytes;
-
-    if (send(fd, string, sizeof(string), 0) == -1) {
-        perror("send");
-        return -1;
-
-    }
-
-    if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
-        perror("recv");
-        return -1;
-    }
-
-    FILE* fp ;
-    char input[255];
-
-    if (fp = fopen(COURSES, "r")) {
-        // printf("dsadasda\n");
-
-        while (fscanf(fp,"%s", input) ) {
-
-            if (strcmp(input, "[CÓDIGO]") == 0  ) {
-                fscanf(fp,"%s", input);
-
-                if (strcmp(input, buffer) == 0) {
-
-                    while (fscanf(fp,"%s", input) ) {
-                    
-                        if (strcmp(input, "[NOME_PROFESSOR]") == 0  ) {
-                            fgets(input, 255, fp);
-                            fgets(input, 255, fp);
-                            fscanf(fp,"%s", input);
-
-                            if (strcmp(login_nome, input) == 0) {
-
-                                while (fscanf(fp,"%s", input) ) {
-                                
-                                    if (strcmp(input, "[COMENTARIO]") == 0  ) {
-                                        fgets(input, 255, fp);
-
-                                    
-                                        char string[23] = "Digite o comentário:\n";
-                                        char buffer[MAXDATASIZE];
-                                        int numbytes;
-
-                                        if (send(fd, string, sizeof(string), 0) == -1) {
-                                            perror("send");
-                                            return -1;
-
-                                        }
-
-                                        if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
-                                            perror("recv");
-                                            return -1;
-                                        }
-
-                                        fprintf(fp, "%s", buffer);
-
-                                        if (repeat_send(fd, "Comentário adicionado.", 23) == -1) {
-                                            perror("send");
-                                            return 1;
-                                        }
-
-                                        fclose(fp);
-                                        return 1;
-                                    }
-                                }
-
-                            }
-
-                        }
-
-                    }
-
-                }
-
-            }
-        }
-
-    }
-
-    char string_erro[] = "Disciplina não encontrada.\n";
-
-    if (repeat_send(fd, string_erro, sizeof(string_erro)) == -1) {
-        perror("send");
-        return -1;
-    }
-
-
-    fclose(fp);
-    return -1;
-}
-
-int ler_com(int fd) {
-
-
-    char string[] = "Digite o código da disciplina\n";
-    char buffer[MAXDATASIZE];
-    int numbytes;
-
-    if (send(fd, string, sizeof(string), 0) == -1) {
-        perror("send");
-        return -1;
-
-    }
-
-    if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
-        perror("recv");
-        return -1;
-    }
-
-    FILE* fp ;
-    char input[255];
-
-    if (fp = fopen(COURSES, "r")) {
-        // printf("dsadasda\n");
-
-        while (fscanf(fp,"%s", input) ) {
-            // printf("%s %s\n", string_nome, string_senha);
-
-            if (strcmp(input, "[CÓDIGO]") == 0  ) {
-                fscanf(fp,"%s", input);
-
-                if (strcmp(input, buffer) == 0) {
-
-                    while (fscanf(fp,"%s", input) ) {
-                    
-                        if (strcmp(input, "[COMENTARIO]") == 0  ) {
-                            fgets(input, 255, fp);
-                            fgets(input, 255, fp);
-                            
-                                if (repeat_send(fd, input, sizeof(input)) == -1) {
-                                    perror("send");
-                                    return 1;
-                                }
-
-                                fclose(fp);
-                                return 1;
-
-                        }
-                    }
-
-                }
-
-            }
-        }
-
-    }
-
-    char string_erro[] = "Disciplina não encontrada.\n";
-
-    if (repeat_send(fd, string_erro, sizeof(string_erro)) == -1) {
-        perror("send");
-        return -1;
-    }
-
-
-    fclose(fp);
-    return -1;
-
-}
-
-int send_login_prof(int fd) {
-
-    char string[] = "Olá!\nDigite o número da funcionalidade que deseja:\n1)Receber ementa de uma disciplina a partir do seu código\n2)Receber todas as informações de uma disciplina a partir do seu código\n3)Listar todas as informações de todas as disciplinas\n4)Listar todos os códigos de disciplinas com seus respectivos títulos\n5)Escrever comentário sobre próxima aula de uma de suas disciplinas\n6)Receber o comentário da próxima aula de uma disciplina a partir de seu código\n7)Fechar conexão.";
-    char buffer[MAXDATASIZE];
-    int numbytes;
-
-    if (send(fd, string, sizeof(string), 0) == -1) {
-        perror("send");
-        return -1;
-
-    }
-
-    if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
-        perror("recv");
-        return -1;
-    }
-
-    char erro[] = "Por favor, digite números de 1 a 7.\n";
-
-    while (strcmp(buffer, "1") != 0 && strcmp(buffer, "2") != 0 && strcmp(buffer, "3") != 0 && strcmp(buffer, "4") != 0 && strcmp(buffer, "5") != 0 && strcmp(buffer, "6") != 0 && strcmp(buffer, "7") != 0) {
-        if (send(fd, erro, sizeof(erro), 0) == -1) {
+    if (user_info->is_prof) {
+        if (send(fd, string_prof, sizeof(string_prof), 0) == -1) {
             perror("send");
             return -1;
 
         }
 
-        if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
-            perror("recv");
+    }
+    else {
+        if (send(fd, string_stud, sizeof(string_stud), 0) == -1) {
+            perror("send");
             return -1;
+
         }
 
     }
 
-    printf("%d\n", buffer[0] - '0');
+    if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
+        perror("recv");
+        return -1;
+    }
+
+    char error_prof[] = "Por favor, digite números de 1 a 7.";
+    char error_stud[] = "Por favor, digite números de 1 a 6.";
+
+    if (user_info->is_prof) {
+
+        while (strcmp(buffer, "1") != 0 && strcmp(buffer, "2") != 0 && strcmp(buffer, "3") != 0 && strcmp(buffer, "4") != 0 && strcmp(buffer, "5") != 0 && strcmp(buffer, "6") != 0 && strcmp(buffer, "7") != 0) {
+            if (send(fd, error_prof, sizeof(error_prof), 0) == -1) {
+                perror("send");
+                return -1;
+
+            }
+
+            if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
+                perror("recv");
+                return -1;
+            }
+
+        }
+    }
+    else {
+
+        while (strcmp(buffer, "1") != 0 && strcmp(buffer, "2") != 0 && strcmp(buffer, "3") != 0 && strcmp(buffer, "4") != 0 && strcmp(buffer, "5") != 0 && strcmp(buffer, "6") != 0) {
+            if (send(fd, error_stud, sizeof(error_stud), 0) == -1) {
+                perror("send");
+                return -1;
+
+            }
+
+            if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
+                perror("recv");
+                return -1;
+            }
+
+        }
+
+    }
+
+    printf("comando: %d\n", buffer[0] - '0');
     switch (buffer[0] - '0') {
 
         case 1:
@@ -722,13 +428,19 @@ int send_login_prof(int fd) {
             todas_infos(fd);
             break;
         case 4:
-            cod_titulo(fd);
+            todas_infos(fd);
             break;
         case 5:
-            escrever_com(fd);
+            ler_com(fd);
             break;
         case 6:
-            ler_com(fd);
+            if (user_info->is_prof) {
+                escrever_com(user_info, fd);
+
+            }
+            else {
+                return -1;
+            }
             break;
         case 7:
             return -1;
@@ -738,189 +450,63 @@ int send_login_prof(int fd) {
     return 1;
 }
 
-// int send_login_student(int fd) {
-
-//     char string = "Olá!\nDigite o número da funcionalidade que deseja:\n1)Receber ementa de uma disciplina a partir do seu código\n
-//   2)Receber todas as informações de uma disciplina a partir do seu código\n3)Listar todas as informações de todas as disciplinas\n
-//   4)Listar todos os códigos de disciplinas com seus respectivos títulos\n
-//   5)Receber o comentário da próxima aula de uma disciplina a partir de seu código.\n";
-//     char buffer[MAXDATASIZE];
-//     int numbytes;
-
-//     if (send(fd, string, sizeof(string), 0) == -1) {
-//         perror("send");
-//         return -1;
-
-//     }
-
-
-//     if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
-//         perror("recv");
-//         return -1;
-//     }
-
-//     char erro = "Por favor, digite números de 1 a 5.\n"
-
-//     while (buffer != "1" && buffer != "2" && buffer != "3" && buffer != "4" && buffer != "5") {
-
-//         if (send(fd, erro, sizeof(erro), 0) == -1) {
-//             perror("send");
-//             return -1;
-
-//         }
-
-//         if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
-//             perror("recv");
-//             return -1;
-//         }
-
-//     }
-
-//     switch (buffer) {
-
-//         case "1":
-//             return ementa(fd);
-//             break;
-//         case "2":
-//             return infos(fd);
-//             break;
-//         case "3":
-//             return todas_infos(fd);
-//             break;
-//         case "4":
-//             return cod_titulo(fd);
-//             break;
-//         case "5":
-//             return ler_com(fd);
-//             break;
-
-//     }
-
-//     return 1;
-
-// }
-
-int validate_login_prof(int fd) {
+user* validate_login(int fd) {
 
     char string[] = "Ola!\nDigite seu nome e senha, em linhas separadas.\n";
-    char nome[MAXDATASIZE];
-    char senha[MAXDATASIZE];
     int numbytes;
+    user* user_logging = malloc(sizeof(user)), *existing_user = malloc(sizeof(user));
 
-    printf("comeco da funcao validate login prof\n");
+    printf("comeco da funcao validate login\n");
     if (send(fd, string, 53, 0) == -1) {
         perror("send");
-        return -1;
+        return NULL;
     }
     printf("depois do send\n");
-    if ((numbytes = recv(fd, nome, MAXDATASIZE-1, 0)) == -1) {
-        perror("recv");
-        return -1;
+    if ((numbytes = read(fd, user_logging, sizeof(user))) == -1) {
+        perror("read");
+        return NULL;
     }
     printf("depois do recv\n");
 
-    nome[numbytes] = '\0';
-    printf("server: received '%s'\n",nome);
+    printf("server: received '%s' '%s'\n", user_logging->name, user_logging->pwd);
 
-    if ((numbytes = recv(fd, senha, MAXDATASIZE-1, 0)) == -1) {
-        perror("recv");
-        return -1;
-    }
+    FILE* users_f ;
 
+    if (users_f = fopen(USERS, "rb")) {
+   
+        fseek(users_f, 0, SEEK_SET);
+        while ( fread(existing_user, sizeof(user), 1, users_f) ) {
 
-    senha[numbytes] = '\0';
-    printf("server: received '%s'\n",senha);
-
-    FILE* fp ;
-
-    char line[255];
-    char string_nome[255];
-    char string_senha[255];
-
-    if (fp = fopen(PROFESSORS, "r")) {
-
-        while (fscanf(fp,"%s %s", string_nome, string_senha) != EOF ) {
-
-            if (strcmp(string_nome, nome) == 0 && strcmp(string_senha, senha) == 0 ) {
-                strcpy(login_nome, string_nome);
-
-                fclose(fp);
-                return 1;
+    printf("user : '%s' '%s'\n", existing_user->name, existing_user->pwd);
+            if (strcmp(existing_user->name, user_logging->name) == 0 && strcmp(existing_user->pwd, user_logging->pwd) == 0 ) {
+                fclose(users_f);
+                free(user_logging);
+                return existing_user;
             }
         }
 
     }
+
+    free(existing_user);
+    free(user_logging);
+    fclose(users_f);
 
     char string_erro[] = "Erro na validacao.\n";
 
     if (send(fd, string_erro, 20, 0) == -1) {
         perror("send");
-        return -1;
+        return NULL;
     }
 
 
-    fclose(fp);
-    return -1;
-
-}
-int validate_login_student(int fd) {
-
-    char string[] = "Ola!\nDigite seu nome e senha, em linhas separadas.\n";
-    char nome[MAXDATASIZE];
-    char senha[MAXDATASIZE];
-    int numbytes;
-
-    if (repeat_send(fd, string, 52) == -1) {
-        perror("send");
-        return -1;
-    }
-
-    if ((numbytes = recv(fd, nome, MAXDATASIZE-1, 0)) == -1) {
-        perror("recv");
-        return -1;
-    }
-
-    nome[numbytes] = '\0';
-    printf("server: received '%s'\n",nome);
-
-    if ((numbytes = recv(fd, senha, MAXDATASIZE-1, 0)) == -1) {
-        perror("recv");
-        return -1;
-    }
-
-
-    senha[numbytes] = '\0';
-    printf("server: received '%s'\n",senha);
-
-    FILE* fp ;
-
-    char line[255];
-    char string_nome[255];
-    char string_senha[255];
-
-    if (fp = fopen(STUDENTS, "r")) {
-        // printf("dsadasda\n");
-
-        while (fscanf(fp,"%s %s", string_nome, string_senha) ) {
-            // printf("%s %s\n", string_nome, string_senha);
-
-            if (strcmp(string_nome, nome) == 0 && strcmp(string_senha, senha) == 0 ) {
-                // printf("fadfasdfads");
-                fclose(fp);
-                return 1;
-            }
-        }
-
-    }
-
-    fclose(fp);
-    return 1;
+    return NULL;
 
 }
 
 void send_func(int fd) {
 
     int login;
+    user* user_info;
 
     do {
         printf("comeco do do\n");
@@ -928,32 +514,21 @@ void send_func(int fd) {
 
         if (login == 1) {
     
-            login = validate_login_prof(fd);
+            // Returns user info or null pointer
+            user_info = validate_login(fd);
 
-            if (login != -1) {
+            printf("%s\n", user_info->name);
+
+            if (user_info != NULL) {
                 do {
-                    login = send_login_prof(fd);
+                    login = send_login(user_info, fd);
                 } while (login == 1);
             }
-
-            return;
-
         }
-        else if (login == 2) {
-            login = validate_login_student(fd);
 
-
-            // if (login != -1) {
-            //     do {
-            //         login = send_login_students(fd);
-            //     } while (login == 1);
-            // }
-
-            // return;
-
-
-        }
+        // If login fails, return to initial menu
 
     } while (login == -1);
 
+    free(user_info);
 }

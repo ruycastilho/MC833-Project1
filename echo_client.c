@@ -12,13 +12,12 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include "server_functionalities.h"
 
-#define PORT "3494" // the port client will be connecting to
-#define MAXDATASIZE 1000 // max number of bytes we can get at once
+#define PORT "3494" 
 
 // get sockaddr, IPv4 or IPv6:
-void *get_in_addr(struct sockaddr *sa)
-{
+void *get_in_addr(struct sockaddr *sa) {
     if (sa->sa_family == AF_INET) {
         return &(((struct sockaddr_in*)sa)->sin_addr);
     }
@@ -35,15 +34,11 @@ int choose_opt (int sockfd) {
     int numbytes;
 
     do {
-        char choice[10];
-        fgets(choice, 10, stdin);
-        for (int i = 10; i > 0; i--) {
-            if (choice[i] == '\n') {
-                choice[i] = '\0';
-                break;
-            }
-        }
-        if (send(sockfd, choice, 10, 0) == -1) {
+        char choice[2];
+        scanf("%s", choice);
+        choice[1] = '\0';
+
+        if (send(sockfd, choice, sizeof(choice), 0) == -1) {
             perror("send");
             return -1;
         }
@@ -55,44 +50,50 @@ int choose_opt (int sockfd) {
         buf[numbytes] = '\0';
         printf("server: received '%s'\n",buf);
 
-    } while (strcmp(buf, "Por favor, digite 1, 2 ou 3.\n") == 0);
+    } while (strcmp(buf, "Por favor, digite 1 ou 2.\n") == 0);
 
     return 0;
 }
 
-int input_user_and_pass (int sockfd) {
+user* input_user_and_pass (int sockfd) {
     char buf[MAXDATASIZE];
     int numbytes;
 
-    char username[32];
-    fgets(username, 32, stdin);
-    for (int i = 32; i > 0; i--) {
+    char username[NAME_LENGTH];
+    scanf("%s", username);
+    
+    // fgets(username, sizeof(username), stdin);
+    for (int i = sizeof(username); i > 0; i--) {
         if (username[i] == '\n') {
             username[i] = '\0';
         }
     }
-    printf("username: '%s'\n", username);
-    if (send(sockfd, username, 32, 0) == -1) {
-        perror("send");
-        return -1;
 
-    }
+    char password[PWD_LENGTH];
+    scanf("%s", password);
 
-    char password[32];
-    fgets(password, 32, stdin);
-    for (int i = 32; i > 0; i--) {
+    for (int i = sizeof(password); i > 0; i--) {
         if (password[i] == '\n') {
             password[i] = '\0';
         }
     }
-    printf("password: '%s'\n", password);
-    if (send(sockfd, password, 32, 0) == -1) {
+
+    user* new_user = malloc(sizeof(user));
+    strcpy(new_user->name, username);
+    strcpy(new_user->pwd, password);
+
+    printf("user: '%s' '%s'\n", new_user->name, new_user->pwd);
+
+    if (send(sockfd, new_user, sizeof(user), 0) == -1) {
         perror("send");
-        return -1;
+        free(new_user);
+        return NULL;
 
     }
 
-    return 0;
+
+    // free(new_user);
+    return new_user;
 }
 
 int main(int argc, char *argv[]) {
@@ -145,6 +146,8 @@ int main(int argc, char *argv[]) {
 
     // -----------------------------------------------------------------------------------------------------------------------------------------
 
+    user *client;
+
     do {
 
         printf("esperando mensagem\n");
@@ -159,7 +162,7 @@ int main(int argc, char *argv[]) {
 
         int choose_opt_ret = choose_opt(sockfd);
 
-        int input_user_and_pass_ret = input_user_and_pass(sockfd);
+        client = input_user_and_pass(sockfd);
 
         if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
             perror("recv");
@@ -186,21 +189,19 @@ int main(int argc, char *argv[]) {
             printf("client: received '%s'\n",buf);
         }
 
-        char selected_option[32];
-        fgets(selected_option, 32, stdin);
-        for (int i = 32; i > 0; i--) {
-            if (selected_option[i] == '\n') {
-                selected_option[i] = '\0';
-            }
-        }
-        if (send(sockfd, selected_option, 32, 0) == -1) {
+        char selected_option[2];
+        scanf("%s", selected_option);
+        selected_option[1] = '\0';
+
+        if (send(sockfd, selected_option, sizeof(selected_option), 0) == -1) {
             perror("send");
             return -1;
         }
 
-        if (strcmp(selected_option, "7") == 0) {
-            ;
+        if ( (strcmp(selected_option, "7") == 0  && client->is_prof ) || (strcmp(selected_option, "6") == 0  && !client->is_prof) ) {
+            break;
         }
+
         else if (strcmp(selected_option, "1") == 0) {
             if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
                 perror("recv");
@@ -210,14 +211,11 @@ int main(int argc, char *argv[]) {
             printf("client: received '%s'\n",buf);
 
 
-            char subj_name[32];
-            fgets(subj_name, 32, stdin);
-            for (int i = 32; i > 0; i--) {
-                if (subj_name[i] == '\n') {
-                    subj_name[i] = '\0';
-                }
-            }
-            if (send(sockfd, subj_name, 32, 0) == -1) {
+            char subj_name[6];
+            scanf("%s", subj_name);
+            subj_name[5] = '\0';
+
+            if (send(sockfd, subj_name, sizeof(subj_name), 0) == -1) {
                 perror("send");
                 return -1;
             }
@@ -233,6 +231,7 @@ int main(int argc, char *argv[]) {
         first_time = 1;
     }
 
+    free(client);
     close(sockfd);
 
     return 0;
