@@ -152,6 +152,12 @@ int interface_codigo(int sockfd) {
     } 
     printf("server: received '%d'\n", status);
 
+    // send an acknowledgement
+    if (send(sockfd, "ack", 4, 0) == -1) {
+        perror("send");
+        exit(1);
+    }
+
     return status;
 
 }
@@ -161,12 +167,6 @@ void interface_ementa(int sockfd) {
 
     char buf[MAXDATASIZE];
     int numbytes;
-
-    // send an acknowledgement
-    if (send(sockfd, "ack", 4, 0) == -1) {
-        perror("send");
-        exit(1);
-    }
 
     //receive the subject's description
     if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {

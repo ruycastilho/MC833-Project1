@@ -159,8 +159,10 @@ int ementa(int fd) {
 int infos(int fd) {
 
     course* course_info = code_search(fd);
+    int numbytes;
 
     if (course_info != NULL) {
+
         if (repeat_send(fd, course_info, sizeof(course)) == -1) {
             perror("send");
             free(course_info);
