@@ -10,7 +10,7 @@
 // Creates new user and returns pointer
 user* create_user(char name[NAME_LENGTH], char pwd[PWD_LENGTH], int is_prof) {
 
-    user *new_user = malloc(sizeof(user));
+    user *new_user = (user*)malloc(sizeof(user));
     strcpy(new_user->name, name);
     strcpy(new_user->pwd, pwd);
     new_user->is_prof = is_prof;
@@ -22,7 +22,7 @@ user* create_user(char name[NAME_LENGTH], char pwd[PWD_LENGTH], int is_prof) {
 course* create_course(char code[6], char name[100], char institute[6], char room[6],
                     char schedule[50], char description[100], char professor[NAME_LENGTH], char comment[50]) {
 
-    course *new_course = malloc(sizeof(course));
+    course *new_course = (course *)malloc(sizeof(course));
     strcpy(new_course->code, code);
     strcpy(new_course->name, name);
     strcpy(new_course->institute, institute);
@@ -43,8 +43,8 @@ int main() {
     // Setting up
     users_f = fopen(USERS, "wb+");
     courses_f = fopen(COURSES, "wb+");
-    user** users = malloc(sizeof(user*)*NUM_USERS);
-    course** courses = malloc(sizeof(course*)*NUM_COURSES);
+    user** users = (user**)malloc(sizeof(user*)*NUM_USERS);
+    course** courses = (course**)malloc(sizeof(course*)*NUM_COURSES);
 
     users[0] = create_user("user1", "1", 0);
     users[1] = create_user("user2", "2", 0);

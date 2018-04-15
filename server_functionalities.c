@@ -13,6 +13,8 @@
 #include <string.h>
 #include "server_functionalities.h"
 
+char acknowledgement[4];
+
 void sigchld_handler(int s) {
     // waitpid() might overwrite errno, so we save and restore it:
     int saved_errno = errno;
@@ -57,6 +59,7 @@ course* code_search(int fd) {
 
     }
 
+    // receive the number of the desired functionality
     if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
         perror("recv");
         return NULL;
@@ -66,7 +69,7 @@ course* code_search(int fd) {
     int status = 0;
 
     if (courses_f = fopen(COURSES, "rb")) {
-        course* existing_course = malloc(sizeof(course));
+        course* existing_course = (course*)malloc(sizeof(course));
 
         while ( fread(existing_course, sizeof(course), 1, courses_f) ) {
 
@@ -77,12 +80,26 @@ course* code_search(int fd) {
                     return NULL;
                 }
 
+                // receive an acknowledgement
+                if ((numbytes = recv(fd, acknowledgement, 4, 0)) == -1) {
+                    perror("recv");
+                    exit(1);
+                } 
+                printf("server: received '%s'\n", acknowledgement);
+
                 free(existing_course);
                 fclose(courses_f);
                 return existing_course;
-   
             }
         }
+
+
+        // receive an acknowledgement
+        if ((numbytes = recv(fd, acknowledgement, 4, 0)) == -1) {
+            perror("recv");
+            exit(1);
+        } 
+        printf("server: received '%s'\n", acknowledgement);
 
         if (repeat_send(fd, &status, sizeof(int)) == -1) {
             perror("send");
@@ -114,6 +131,7 @@ course* code_search(int fd) {
 
 int ementa(int fd) {
     course* course_info = code_search(fd);
+    int numbytes;
 
     if (course_info != NULL) {
         if (repeat_send(fd, course_info->description, sizeof(course_info->description)) == -1) {
@@ -121,6 +139,14 @@ int ementa(int fd) {
             free(course_info);
             return -1;
         }
+
+        // receive an acknowledgement
+        if ((numbytes = recv(fd, acknowledgement, 4, 0)) == -1) {
+            perror("recv");
+            exit(1);
+        } 
+        printf("server: received '%s'\n", acknowledgement);
+
         return 1;
     }
 
@@ -151,7 +177,7 @@ int infos(int fd) {
 
 int todas_infos(int fd) {
     FILE* courses_f ;
-    course* existing_course = malloc(sizeof(course));
+    course* existing_course = (course*)malloc(sizeof(course));
 
     if (courses_f = fopen(COURSES, "rb")) {
         // printf("dsadasda\n");
@@ -202,7 +228,7 @@ int escrever_com(user* prof, int fd) {
     }
 
     FILE* courses_f ;
-    course* existing_course = malloc(sizeof(course));
+    course* existing_course = (course*)malloc(sizeof(course));
     int status = 0;
 
     if (courses_f = fopen(COURSES, "rb")) {
@@ -345,18 +371,18 @@ int send_func_login(int fd) {
     char buffer[MAXDATASIZE];
     int numbytes;
     
-    if ((numbytes = send(fd, string, sizeof(string), 0)) == -1) { // trocando repeat_send por send para fins de testeaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    // send options menu
+    if ((numbytes = send(fd, string, sizeof(string), 0)) == -1) {
         perror("send");
         return -1;
-
     }
-    printf("ja dei boas vindas ao sistema, %d bytes mandados\n", numbytes);
+    printf("ja dei boas vindas ao sistema, %d bytes enviados\n", numbytes);
 
+    // receive the selected option
     if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
         perror("recv");
         return -1;
     }
-
     buffer[numbytes] = '\0';
     printf("server: received '%s'\n",buffer);
 
@@ -396,7 +422,6 @@ int send_login(user* user_info, int fd) {
             return -1;
 
         }
-
     }
     else {
         if (send(fd, string_stud, sizeof(string_stud), 0) == -1) {
@@ -488,20 +513,19 @@ user* validate_login(int fd) {
 
     char string[] = "Ola!\nDigite seu nome e senha, em linhas separadas.";
     int numbytes;
-    user* user_logging = malloc(sizeof(user)), *existing_user = malloc(sizeof(user));
+    user* user_logging = (user*)malloc(sizeof(user)), *existing_user = (user*)malloc(sizeof(user));
 
-    printf("comeco da funcao validate login\n");
+    // send 'digite nome e senha em linhas separadas'
     if (send(fd, string, 53, 0) == -1) {
         perror("send");
         return NULL;
     }
-    printf("depois do send\n");
-    if ((numbytes = read(fd, user_logging, sizeof(user))) == -1) {
-        perror("read");
+
+    // receive username and password
+    if ((numbytes = recv(fd, user_logging, sizeof(user), 0)) == -1) {
+        perror("recv");
         return NULL;
     }
-    printf("depois do recv\n");
-
     printf("server: received '%s' '%s'\n", user_logging->name, user_logging->pwd);
 
     FILE* users_f ;
@@ -516,17 +540,33 @@ user* validate_login(int fd) {
                 fclose(users_f);
                 free(user_logging);
                 status = 1;
-
     // ajeitar aqui
+
+                // send the status
                 if (send(fd, &status, sizeof(int), 0) == -1) {
                     perror("send");
                     return NULL;
                 }
 
+                // receive an acknowledgement from the previous message
+                if ((numbytes = recv(fd, acknowledgement, 4, 0)) == -1) {
+                    perror("recv");
+                    exit(1);
+                }
+                printf("server: received '%s' \n", acknowledgement);
+
+                // send the user struct
                 if (send(fd, existing_user, sizeof(existing_user), 0) == -1) {
                     perror("send");
                     return NULL;
                 }
+
+                // receive an acknowledgement from the previous message
+                if ((numbytes = recv(fd, acknowledgement, 4, 0)) == -1) {
+                    perror("recv");
+                    exit(1);
+                }
+                printf("server: received '%s' \n", acknowledgement);
 
                 return existing_user;
             }
@@ -564,7 +604,6 @@ void send_func(int fd) {
     user* user_info;
 
     do {
-        printf("comeco do do\n");
         login = send_func_login(fd);
 
         if (login == 1) {
