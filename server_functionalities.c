@@ -30,7 +30,6 @@ void *get_in_addr(struct sockaddr *sa) {
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-
 int repeat_send(int fd, const void *buffer, int size) {
     char *string = (char*) buffer;
 
@@ -46,7 +45,6 @@ int repeat_send(int fd, const void *buffer, int size) {
     }
     return 1;
 }
-
 
 course* code_search(int fd) {
     char string[] = "Digite o código da disciplina:";
@@ -65,6 +63,7 @@ course* code_search(int fd) {
     }
 
     FILE* courses_f ;
+    int status = 0;
 
     if (courses_f = fopen(COURSES, "rb")) {
         course* existing_course = malloc(sizeof(course));
@@ -72,11 +71,22 @@ course* code_search(int fd) {
         while ( fread(existing_course, sizeof(course), 1, courses_f) ) {
 
             if (strcmp(existing_course->code, buffer) == 0 ) {
+                status = 1;
+                if (repeat_send(fd, &status, sizeof(int)) == -1) {
+                    perror("send");
+                    return NULL;
+                }
+
                 free(existing_course);
                 fclose(courses_f);
                 return existing_course;
    
             }
+        }
+
+        if (repeat_send(fd, &status, sizeof(int)) == -1) {
+            perror("send");
+            return NULL;
         }
 
         free(existing_course);
@@ -193,12 +203,19 @@ int escrever_com(user* prof, int fd) {
 
     FILE* courses_f ;
     course* existing_course = malloc(sizeof(course));
+    int status = 0;
 
     if (courses_f = fopen(COURSES, "rb")) {
 
         while ( fread(existing_course, sizeof(course), 1, courses_f) ) {
 
             if (strcmp(existing_course->code, buffer) == 0 ) {
+                status = 1;
+                if (repeat_send(fd, &status, sizeof(int)) == -1) {
+                    perror("send");
+                    return -1;
+                }
+
                 found_course = 1;
                 break;
 
@@ -208,6 +225,10 @@ int escrever_com(user* prof, int fd) {
         }
 
         if (!found_course) {
+            if (repeat_send(fd, &status, sizeof(int)) == -1) {
+                perror("send");
+                return -1;
+            }
 
             free(existing_course);
             fclose(courses_f);
@@ -224,6 +245,10 @@ int escrever_com(user* prof, int fd) {
 
     }
     else {
+        if (repeat_send(fd, &status, sizeof(int)) == -1) {
+            perror("send");
+            return -1;
+        }
         char file_error[] = "Erro ao abrir arquivo.";
 
         if (repeat_send(fd, file_error, sizeof(file_error)) == -1) {
@@ -235,18 +260,26 @@ int escrever_com(user* prof, int fd) {
 
     if (strcmp(existing_course->professor, prof->name) == 0) {
 
-        if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
+        char new_comment[COMMENT_LENGTH];
+        // printf("counter: %d\n", counter);
+        fseek(courses_f, counter*sizeof(course), SEEK_SET);
+
+        char comment_question[] = "Digite o comentario:";
+
+        if (repeat_send(fd, comment_question, sizeof(comment_question)) == -1) {
+            perror("send");
+            return -1;
+        }
+
+        if ((numbytes = recv(fd, new_comment, MAXDATASIZE-1, 0)) == -1) {
             perror("recv");
             return -1;
         }
 
-        char new_comment[COMMENT_LENGTH];
-        fseek(courses_f, counter*sizeof(course), SEEK_SET);
         strcpy(existing_course->comment, new_comment);
+        fwrite(existing_course, sizeof(course), 1, courses_f);
 
-   
-
-        if ( fwrite(existing_course, sizeof(course), 1, courses_f) ) {
+        if ( fwrite != 0 ) {
             char feedback[] = "Comentario adicionado.";
             free(existing_course);
             fclose(courses_f);
@@ -284,7 +317,7 @@ int escrever_com(user* prof, int fd) {
 
     }
     
-    return -1;
+    return 1;
 }
 
 int ler_com(int fd) {
@@ -350,12 +383,13 @@ int send_func_login(int fd) {
 
 int send_login(user* user_info, int fd) {
 
-    char string_prof[] = "\nOlá!\nDigite o número da funcionalidade que deseja:\n1)Receber ementa de uma disciplina a partir do seu código\n2)Receber todas as informações de uma disciplina a partir do seu código\n3)Listar todas as informações de todas as disciplinas\n4)Listar todos os códigos de disciplinas com seus respectivos títulos\n5)Receber o comentário da próxima aula de uma disciplina a partir de seu código\n6)Escrever comentário sobre próxima aula de uma de suas disciplinas\n7)Fechar conexão";
-    char string_stud[] = "\nOlá!\nDigite o número da funcionalidade que deseja:\n1)Receber ementa de uma disciplina a partir do seu código\n2)Receber todas as informações de uma disciplina a partir do seu código\n3)Listar todas as informações de todas as disciplinas\n4)Listar todos os códigos de disciplinas com seus respectivos títulos\n5)Receber o comentário da próxima aula de uma disciplina a partir de seu código\n6)Fechar conexão";  
+    char string_prof[] = "Ola!\nDigite o número da funcionalidade que deseja:\n1)Receber ementa de uma disciplina a partir do seu código\n2)Receber todas as informações de uma disciplina a partir do seu código\n3)Listar todas as informações de todas as disciplinas\n4)Listar todos os códigos de disciplinas com seus respectivos títulos\n5)Receber o comentário da próxima aula de uma disciplina a partir de seu código\n6)Escrever comentário sobre próxima aula de uma de suas disciplinas\n7)Fechar conexão";
+    char string_stud[] = "Ola!\nDigite o número da funcionalidade que deseja:\n1)Receber ementa de uma disciplina a partir do seu código\n2)Receber todas as informações de uma disciplina a partir do seu código\n3)Listar todas as informações de todas as disciplinas\n4)Listar todos os códigos de disciplinas com seus respectivos títulos\n5)Receber o comentário da próxima aula de uma disciplina a partir de seu código\n6)Fechar conexão";  
     
     char buffer[MAXDATASIZE];
     int numbytes;
 
+    
     if (user_info->is_prof) {
         if (send(fd, string_prof, sizeof(string_prof), 0) == -1) {
             perror("send");
@@ -452,7 +486,7 @@ int send_login(user* user_info, int fd) {
 
 user* validate_login(int fd) {
 
-    char string[] = "Ola!\nDigite seu nome e senha, em linhas separadas.\n";
+    char string[] = "Ola!\nDigite seu nome e senha, em linhas separadas.";
     int numbytes;
     user* user_logging = malloc(sizeof(user)), *existing_user = malloc(sizeof(user));
 
@@ -471,19 +505,40 @@ user* validate_login(int fd) {
     printf("server: received '%s' '%s'\n", user_logging->name, user_logging->pwd);
 
     FILE* users_f ;
+    int status = 0;
 
     if (users_f = fopen(USERS, "rb")) {
    
         fseek(users_f, 0, SEEK_SET);
         while ( fread(existing_user, sizeof(user), 1, users_f) ) {
 
-    printf("user : '%s' '%s'\n", existing_user->name, existing_user->pwd);
             if (strcmp(existing_user->name, user_logging->name) == 0 && strcmp(existing_user->pwd, user_logging->pwd) == 0 ) {
                 fclose(users_f);
                 free(user_logging);
+                status = 1;
+
+    // ajeitar aqui
+                if (send(fd, &status, sizeof(int), 0) == -1) {
+                    perror("send");
+                    return NULL;
+                }
+
+                if (send(fd, existing_user, sizeof(existing_user), 0) == -1) {
+                    perror("send");
+                    return NULL;
+                }
+
                 return existing_user;
             }
         }
+
+
+    // ajeitar aqui
+        if (send(fd, &status, sizeof(int), 0) == -1) {
+            perror("send");
+            return NULL;
+        }
+
 
     }
 
@@ -491,9 +546,9 @@ user* validate_login(int fd) {
     free(user_logging);
     fclose(users_f);
 
-    char string_erro[] = "Erro na validacao.\n";
+    char string_erro[] = "Erro na validacao.";
 
-    if (send(fd, string_erro, 20, 0) == -1) {
+    if (send(fd, string_erro, sizeof(string_erro), 0) == -1) {
         perror("send");
         return NULL;
     }
