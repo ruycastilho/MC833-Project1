@@ -17,6 +17,27 @@
 #define COURSES "courses.txt"
 #define MAXDATASIZE 10000
 
+typedef struct {
+
+    char name[33];
+    char pwd[33];
+    int is_prof;
+
+} user;
+
+typedef struct {
+
+    char code[6];
+    char name[100];
+    char institute[6];
+    char room[6];
+    char schedule[50];
+    char description[100];
+    char professor[33];
+    char comment[50];
+
+} course;
+
 void sigchld_handler(int s);
 void *get_in_addr(struct sockaddr *sa);
 int repeat_send(int fd, const void *buffer, int size);
