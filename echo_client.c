@@ -27,9 +27,10 @@ void *get_in_addr(struct sockaddr *sa) {
 void choose_opt(int sockfd) {
     char buf[MAXDATASIZE];
     int numbytes;
+    char choice[2];
 
     do {
-        char choice[2];
+        printf("Opcao: ");
         scanf("%s", choice);
         choice[1] = '\0';
         // send selected option
@@ -43,7 +44,7 @@ void choose_opt(int sockfd) {
             exit(1);
         }
         buf[numbytes] = '\0';
-        printf("client: received '%s'\n",buf);
+        printf("%s\n",buf);
 
     } while (strcmp(buf, "Por favor, digite 1 ou 2.\n") == 0);
 
@@ -53,29 +54,19 @@ user* input_user_and_pass (int sockfd) {
     char buf[MAXDATASIZE];
     int numbytes;
 
+    printf("Nome: ");
     char username[NAME_LENGTH];
     scanf("%s", username);
-    
-    for (int i = sizeof(username); i > 0; i--) {
-        if (username[i] == '\n') {
-            username[i] = '\0';
-        }
-    }
 
+    printf("Senha: ");
     char password[PWD_LENGTH];
     scanf("%s", password);
-
-    for (int i = sizeof(password); i > 0; i--) {
-        if (password[i] == '\n') {
-            password[i] = '\0';
-        }
-    }
 
     user* new_user = (user*)malloc(sizeof(user));
     strcpy(new_user->name, username);
     strcpy(new_user->pwd, password);
 
-    printf("user: '%s' '%s'\n", new_user->name, new_user->pwd);
+    // printf("user: '%s' '%s'\n", new_user->name, new_user->pwd);
 
     // send struct with user info
     if (send(sockfd, new_user, sizeof(user), 0) == -1) {
@@ -134,12 +125,15 @@ int interface_codigo(int sockfd) {
         exit(1);
     }
     buf[numbytes] = '\0';
-    printf("server: received '%s'\n", buf);
+    printf("%s", buf);
+
+    printf("Codigo: ");
 
     char subj_name[6];
     scanf("%s", subj_name);
     subj_name[5] = '\0';
-    // sends the number of the desired functionality
+
+    // sends the code value
     if (send(sockfd, subj_name, sizeof(subj_name), 0) == -1) {
         perror("send");
         return -1;
@@ -150,7 +144,7 @@ int interface_codigo(int sockfd) {
         perror("recv");
         exit(1);
     } 
-    printf("server: received '%d'\n", status);
+    // printf("%d\n", status);
 
     // send an acknowledgement
     if (send(sockfd, "ack", 4, 0) == -1) {
@@ -175,7 +169,7 @@ void interface_ementa(int sockfd) {
     }
 
     buf[numbytes] = '\0';
-    printf("Ementa: %s\n\n",buf);
+    printf("\nEmenta: %s\n",buf);
 
 
     // send an acknowledgement
@@ -199,7 +193,7 @@ void interface_infos(int sockfd) {
             exit(1);
         } 
 
-        printf("Codigo: %s\nTitulo: %s\nInstituto: %s\nSala: %s\nHorario: %s\nEmenta: %s\nProfessor: %s\nComentario: %s\n\n", 
+        printf("\nCodigo: %s\nTitulo: %s\nInstituto: %s\nSala: %s\nHorario: %s\nEmenta: %s\nProfessor: %s\nComentario: %s\n", 
                 received_course->code, received_course->name, received_course->institute,
                 received_course->room, received_course->schedule, received_course->description,
                 received_course->professor, received_course->comment);
@@ -212,12 +206,13 @@ void interface_infos(int sockfd) {
         }
 
         buf[numbytes] = '\0';
-        printf("client: received '%s'\n",buf);
+        printf("%s",buf);
 
     }
 
     free(received_course);
-}    
+} 
+
 void interface_todas_infos(int sockfd) {
 
     // precisa do header pra esse
@@ -240,7 +235,7 @@ void interface_ler_com(int sockfd) {
     }
 
     buf[numbytes] = '\0';
-    printf("Comentario: %s\n\n",buf);
+    printf("\nComentario: %s\n",buf);
 
 }
 
@@ -257,12 +252,16 @@ void interface_esc_com(int sockfd) {
         }
 
         buf[numbytes] = '\0';
-        printf("%s\n\n",buf);
-
+        printf("%s",buf);
 
         char comment[COMMENT_LENGTH];
-        scanf("%s", comment);
-        comment[COMMENT_LENGTH] = '\0';
+        scanf("\n");
+        fgets(comment, sizeof(comment), stdin);
+
+        for(int i = COMMENT_LENGTH-1; i >= 0; i--) {
+            if (comment[i] == '\n')
+                comment[i] = '\0';
+        }
 
         if (send(sockfd, comment, sizeof(comment), 0) == -1) {
             perror("send");
@@ -276,8 +275,16 @@ void interface_esc_com(int sockfd) {
         }
 
         buf[numbytes] = '\0';
-        printf("%s\n\n",buf);
-        
+        printf("%s",buf);
+
+
+        // send an acknowledgement
+        if (send(sockfd, "ack", 4, 0) == -1) {
+            perror("send");
+            exit(1);
+        }
+
+
     }
     else {
         if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
@@ -286,7 +293,7 @@ void interface_esc_com(int sockfd) {
         }
 
         buf[numbytes] = '\0';
-        printf("%s\n\n",buf);
+        printf("%s",buf);
         
     }
  
@@ -301,7 +308,7 @@ void interface(int sockfd) {
 
     do {
 
-        printf("esperando menu de login\n");
+        // printf("esperando menu de login\n");
 
         // ajeitar aqui
         // receive login menu
@@ -310,7 +317,7 @@ void interface(int sockfd) {
             exit(1);
         }
         buf[numbytes] = '\0';
-        printf("%s\n\n",buf);
+        printf("%s",buf);
 
         // send selected option and receive 'digite seu nome e senha em linhas separadas'
         choose_opt(sockfd);
@@ -322,7 +329,7 @@ void interface(int sockfd) {
 
     while (1) {
 
-        printf("esperando menu de opcoes\n");
+        // printf("esperando menu de opcoes\n");
         // receive options menu
         if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
             perror("recv");
@@ -330,9 +337,9 @@ void interface(int sockfd) {
             exit(1);
         }
         buf[numbytes] = '\0';
-        printf("%s\n\n",buf);
-    
-
+        printf("%s",buf);
+        
+        printf("Opcao: ");
         char selected_option[2];
         scanf("%s", selected_option);
         selected_option[1] = '\0';

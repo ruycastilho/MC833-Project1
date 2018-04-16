@@ -50,7 +50,7 @@ int todas_infos(int fd);
 int cod_titulo(int fd);
 int escrever_com(user* prof, int fd);
 int ler_com(int fd);
-int send_login(user* user_info, int fd);
+int send_menu(user* user_info, int fd);
 user* validate_login(int fd);
 void send_func(int fd);
 course* code_search(int fd);

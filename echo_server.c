@@ -95,8 +95,6 @@ int main(void) {
         if (!fork()) { // this is the child process
             close(sockfd); // child doesn't need the listener
             
-
-            // MUDAR AQUI
             send_func(new_fd);
             close(new_fd);
             exit(0);
