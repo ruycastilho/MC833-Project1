@@ -48,6 +48,17 @@ int repeat_send(int fd, const void *buffer, int size) {
     return 1;
 }
 
+int wait_for_ack(int fd) {
+
+    // receive an acknowledgement
+    if (recv(fd, acknowledgement, sizeof(acknowledgement), 0) == -1) {
+        perror("recv");
+        return -1;
+    } 
+    printf("server: received '%s'\n", acknowledgement);
+    return 1;
+
+}
 course* code_search(int fd) {
     char string[] = "\nDigite o código da disciplina:\n";
     char buffer[MAXDATASIZE];
@@ -80,12 +91,10 @@ course* code_search(int fd) {
                     return NULL;
                 }
 
-                // receive an acknowledgement
-                if ((numbytes = recv(fd, acknowledgement, sizeof(acknowledgement), 0)) == -1) {
-                    perror("recv");
-                    exit(1);
-                } 
-                printf("server: received '%s'\n", acknowledgement);
+                if (wait_for_ack(fd) == -1) {
+                    return NULL;
+                    
+                }
 
                 fclose(courses_f);
                 return existing_course;
@@ -97,12 +106,10 @@ course* code_search(int fd) {
             return NULL;
         }
 
-        // receive an acknowledgement
-        if ((numbytes = recv(fd, acknowledgement, sizeof(acknowledgement), 0)) == -1) {
-            perror("recv");
-            exit(1);
-        } 
-        printf("server: received '%s'\n", acknowledgement);
+        if (wait_for_ack(fd) == -1) {
+            return NULL;
+            
+        }
 
         free(existing_course);
         fclose(courses_f);
@@ -116,13 +123,10 @@ course* code_search(int fd) {
         }
     }
 
-    // receive an acknowledgement
-    if ((numbytes = recv(fd, acknowledgement, sizeof(acknowledgement), 0)) == -1) {
-        perror("recv");
-        exit(1);
-    } 
-    printf("server: received '%s'\n", acknowledgement);
-
+    if (wait_for_ack(fd) == -1) {
+        return NULL;
+        
+    }
 
     if (repeat_send(fd, &status, sizeof(int)) == -1) {
         perror("send");
@@ -151,12 +155,10 @@ int ementa(int fd) {
             return -1;
         }
 
-        // receive an acknowledgement
-        if ((numbytes = recv(fd, acknowledgement, sizeof(acknowledgement), 0)) == -1) {
-            perror("recv");
-            exit(1);
-        } 
-        printf("server: received '%s'\n", acknowledgement);
+        if (wait_for_ack(fd) == -1) {
+            return -1;
+            
+        }
 
         return 1;
     }
@@ -191,33 +193,90 @@ int infos(int fd) {
 int todas_infos(int fd) {
     FILE* courses_f ;
     course* existing_course = (course*)malloc(sizeof(course));
+    int numbytes, status = 1;
 
     if (courses_f = fopen(COURSES, "rb")) {
         // printf("dsadasda\n");
 
+        if (repeat_send(fd, &status, sizeof(status)) == -1) {
+            perror("send");
+            free(existing_course);
+            fclose(courses_f);
+            return -1;
+        }
+        if (wait_for_ack(fd) == -1) {
+            return -1;
+            
+        }
+
         while ( fread(existing_course, sizeof(course), 1, courses_f) ) {
+  
+            if (repeat_send(fd, &status, sizeof(status)) == -1) {
+                perror("send");
+                free(existing_course);
+                fclose(courses_f);
+                return -1;
+            }
+
+            if (wait_for_ack(fd) == -1) {
+                return -1;
                 
+            }
+
             if (repeat_send(fd, existing_course, sizeof(course)) == -1) {
                 perror("send");
                 free(existing_course);
                 fclose(courses_f);
                 return -1;
             }
-        
+
+            if (wait_for_ack(fd) == -1) {
+                return -1;
+                
+            }
+
         }
 
         free(existing_course);
         fclose(courses_f);
+        status = 0;
+        if (repeat_send(fd, &status, sizeof(status)) == -1) {
+            perror("send");
+            return -1;
+        }
+
+        if (wait_for_ack(fd) == -1) {
+            return -1;
+            
+        }
+
         return 1;
 
     }
 
-    char file_error[] = "\nErro ao abrir arquivo.\n";
     free(existing_course);
+    status = 0;
+
+    if (repeat_send(fd, &status, sizeof(status)) == -1) {
+        perror("send");
+        return -1;
+    }
+
+    if (wait_for_ack(fd) == -1) {
+        return -1;
+        
+    }
+
+    char file_error[] = "\nErro ao abrir arquivo.\n";
 
     if (repeat_send(fd, file_error, sizeof(file_error)) == -1) {
         perror("send");
         return -1;
+    }
+
+    if (wait_for_ack(fd) == -1) {
+        return -1;
+        
     }
 
     return -1;
@@ -255,12 +314,10 @@ int escrever_com(user* prof, int fd) {
                     return -1;
                 }
 
-                // receive an acknowledgement
-                if ((numbytes = recv(fd, acknowledgement, sizeof(acknowledgement), 0)) == -1) {
-                    perror("recv");
-                    exit(1);
-                } 
-                printf("server: received '%s'\n", acknowledgement);
+                if (wait_for_ack(fd) == -1) {
+                    return -1;
+                    
+                }
 
                 found_course = 1;
                 break;
@@ -277,13 +334,10 @@ int escrever_com(user* prof, int fd) {
                 return -1;
             }
 
-            // receive an acknowledgement
-            if ((numbytes = recv(fd, acknowledgement, sizeof(acknowledgement), 0)) == -1) {
-                perror("recv");
-                exit(1);
-            } 
-            printf("server: received '%s'\n", acknowledgement);
-
+            if (wait_for_ack(fd) == -1) {
+                return -1;
+                
+            }
 
             free(existing_course);
             fclose(courses_f);
@@ -303,12 +357,10 @@ int escrever_com(user* prof, int fd) {
                 return -1;
             }
 
-            // receive an acknowledgement
-            if ((numbytes = recv(fd, acknowledgement, sizeof(acknowledgement), 0)) == -1) {
-                perror("recv");
-                exit(1);
-            } 
-            printf("server: received '%s'\n", acknowledgement);
+            if (wait_for_ack(fd) == -1) {
+                return -1;
+                
+            }
 
             char login_error[] = "\nVoce nao tem permissao para alterar comentarios dessa disciplina.\n";
             free(existing_course);
@@ -334,19 +386,14 @@ int escrever_com(user* prof, int fd) {
             return -1;
         }
     
-
-        // receive an acknowledgement
-        if ((numbytes = recv(fd, acknowledgement, sizeof(acknowledgement), 0)) == -1) {
-            perror("recv");
-            exit(1);
-        } 
-        printf("server: received '%s'\n", acknowledgement);
-
+        if (wait_for_ack(fd) == -1) {
+            return -1;
+            
+        }
 
     }
 
     char new_comment[COMMENT_LENGTH];
-    // printf("counter: %d\n", counter);
     fseek(courses_f, counter*sizeof(course), SEEK_SET);
 
     char comment_question[] = "\nDigite o comentario:\n";
@@ -362,12 +409,8 @@ int escrever_com(user* prof, int fd) {
     }
 
     strcpy(existing_course->comment, new_comment);
-    printf("Comment: '%s'\n", existing_course->comment);
-
     fwrite(existing_course, sizeof(course), 1, courses_f);
     fseek(courses_f, counter*sizeof(course), SEEK_SET);
-    fread(existing_course, sizeof(course), 1, courses_f);
-    printf("Novo comment: '%s'\n", existing_course->comment);
     fclose(courses_f);
 
     if ( fwrite != 0 ) {
@@ -379,12 +422,10 @@ int escrever_com(user* prof, int fd) {
             return -1;
         }
 
-        // receive an acknowledgement
-        if ((numbytes = recv(fd, acknowledgement, sizeof(acknowledgement), 0)) == -1) {
-            perror("recv");
-            exit(1);
-        } 
-        printf("server: received '%s'\n", acknowledgement);
+        if (wait_for_ack(fd) == -1) {
+            return -1;
+            
+        }
 
         return 1;
     }
@@ -397,12 +438,10 @@ int escrever_com(user* prof, int fd) {
             return -1;
         }
 
-        // receive an acknowledgement
-        if ((numbytes = recv(fd, acknowledgement, sizeof(acknowledgement), 0)) == -1) {
-            perror("recv");
-            exit(1);
-        } 
-        printf("server: received '%s'\n", acknowledgement);
+        if (wait_for_ack(fd) == -1) {
+            return -1;
+            
+        }
 
         return -1;
     }
@@ -478,7 +517,11 @@ int send_menu(user* user_info, int fd) {
     char buffer[MAXDATASIZE];
     int numbytes;
 
-    
+    if (wait_for_ack(fd) == -1) {
+        return -1;
+        
+    }
+
     if (user_info->is_prof) {
         if (send(fd, string_prof, sizeof(string_prof), 0) == -1) {
             perror("send");
@@ -591,6 +634,7 @@ user* validate_login(int fd) {
     }
     printf("server: received '%s' '%s'\n", user_logging->name, user_logging->pwd);
 
+
     FILE* users_f ;
     int status = 0;
 
@@ -600,10 +644,9 @@ user* validate_login(int fd) {
         while ( fread(existing_user, sizeof(user), 1, users_f) ) {
 
             if (strcmp(existing_user->name, user_logging->name) == 0 && strcmp(existing_user->pwd, user_logging->pwd) == 0 ) {
-                fclose(users_f);
                 free(user_logging);
+                printf("aqui-> %d\n", existing_user->is_prof);
                 status = 1;
-    // ajeitar aqui
 
                 // send the status
                 if (send(fd, &status, sizeof(int), 0) == -1) {
@@ -612,12 +655,10 @@ user* validate_login(int fd) {
                 }
 
                 // receive an acknowledgement from the previous message
-                if ((numbytes = recv(fd, acknowledgement, 4, 0)) == -1) {
-                    perror("recv");
-                    exit(1);
+                if (wait_for_ack(fd) == -1) {
+                    return NULL;
+                    
                 }
-                printf("server: received '%s' \n", acknowledgement);
-
                 // send the user struct
                 if (send(fd, existing_user, sizeof(existing_user), 0) == -1) {
                     perror("send");
@@ -625,18 +666,15 @@ user* validate_login(int fd) {
                 }
 
                 // receive an acknowledgement from the previous message
-                if ((numbytes = recv(fd, acknowledgement, 4, 0)) == -1) {
-                    perror("recv");
-                    exit(1);
+                if (wait_for_ack(fd) == -1) {
+                    return NULL;
+                    
                 }
-                printf("server: received '%s' \n", acknowledgement);
-
+                
                 return existing_user;
             }
         }
 
-
-    // ajeitar aqui
         if (send(fd, &status, sizeof(int), 0) == -1) {
             perror("send");
             return NULL;
