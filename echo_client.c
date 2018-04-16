@@ -174,10 +174,10 @@ void interface_ementa(int sockfd) {
         perror("recv");
         exit(1);
     }
+    gettimeofday(&tv2, NULL);
     buf[numbytes] = '\0';
     printf("\nEmenta: %s\n",buf);
     
-    gettimeofday(&tv2, NULL);
     printf("tempo total da operação: %.2f usecs\n", (float)(tv2.tv_usec - tv1.tv_usec));
 
     send_ack(sockfd);
@@ -194,13 +194,14 @@ void interface_infos(int sockfd) {
         if ((numbytes = recv(sockfd, received_course, sizeof(course), 0)) == -1) {
             perror("recv");
             exit(1);
-        } 
+        }
+        gettimeofday(&tv2, NULL); 
         printf("\nCodigo: %s\nTitulo: %s\nInstituto: %s\nSala: %s\nHorario: %s\nEmenta: %s\nProfessor: %s\nComentario: %s\n", 
                 received_course->code, received_course->name, received_course->institute,
                 received_course->room, received_course->schedule, received_course->description,
                 received_course->professor, received_course->comment);
         
-        gettimeofday(&tv2, NULL);
+        
         printf("tempo total da operação: %.2f usecs\n", (float)(tv2.tv_usec - tv1.tv_usec));
 
     }
@@ -372,11 +373,11 @@ void interface_ler_com(int sockfd) {
         perror("recv");
         exit(1);
     }
+    gettimeofday(&tv2, NULL);
     buf[numbytes] = '\0';
     printf("\nComentario: %s\n",buf);
 
     
-    gettimeofday(&tv2, NULL);
     printf("tempo total da operação: %.2f usecs\n", (float)(tv2.tv_usec - tv1.tv_usec));
 }
 
@@ -415,10 +416,10 @@ void interface_esc_com(int sockfd) {
             perror("recv");
             exit(1);
         }
+        gettimeofday(&tv2, NULL);
         buf[numbytes] = '\0';
         printf("%s",buf);
         
-        gettimeofday(&tv2, NULL);
         printf("tempo total da operação: %.2f usecs\n", (float)(tv2.tv_usec - tv1.tv_usec));
         
         send_ack(sockfd);
