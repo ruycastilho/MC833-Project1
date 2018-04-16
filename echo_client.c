@@ -14,7 +14,7 @@
 #include <arpa/inet.h>
 #include "server_functionalities.h"
 
-#define PORT "3494" 
+#define PORT "4000" 
 
 // get sockaddr, IPv4 or IPv6:
 void *get_in_addr(struct sockaddr *sa) {
@@ -96,9 +96,11 @@ user* input_user_and_pass (int sockfd) {
 
     // send message acknowledgement
     send_ack(sockfd);
+    free(new_user);
 
+    user* client = (user*)malloc((sizeof(user)));
     if (status) {
-        if ((numbytes = recv(sockfd, new_user, sizeof(user), 0)) == -1) {
+        if ((numbytes = recv(sockfd, client, sizeof(user), 0)) == -1) {
             perror("recv");
             exit(1);
 
@@ -111,11 +113,11 @@ user* input_user_and_pass (int sockfd) {
     }
 
     else {
-        new_user = NULL;
+        client = NULL;
 
     }
 
-    return new_user;
+    return client;
 }
 
 int interface_codigo(int sockfd) {

@@ -645,7 +645,6 @@ user* validate_login(int fd) {
 
             if (strcmp(existing_user->name, user_logging->name) == 0 && strcmp(existing_user->pwd, user_logging->pwd) == 0 ) {
                 free(user_logging);
-                printf("aqui-> %d\n", existing_user->is_prof);
                 status = 1;
 
                 // send the status
@@ -660,7 +659,7 @@ user* validate_login(int fd) {
                     
                 }
                 // send the user struct
-                if (send(fd, existing_user, sizeof(existing_user), 0) == -1) {
+                if (send(fd, existing_user, sizeof(user), 0) == -1) {
                     perror("send");
                     return NULL;
                 }
