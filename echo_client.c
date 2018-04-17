@@ -15,7 +15,7 @@
 #include <sys/time.h>
 #include "server_functionalities.h"
 
-#define PORT "4000" 
+#define PORT "4001" 
 
 struct timeval tv1, tv2;
 
@@ -27,10 +27,75 @@ void *get_in_addr(struct sockaddr *sa) {
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
+int repeat_send(int fd, const void *buffer, int size) {
+    char *string = (char*)malloc(sizeof(char)*(size + HEADER_LENGTH));
+    // char string[size+HEADER_LENGTH];
+
+    char *input = (char*) buffer;
+    // printf("size '%d'", size);
+
+    // printf("input '%s'\n", input);
+
+    // if (strcmp(input, "MC102") == 0) {
+
+    //     course* test = (course*) buffer;
+    //     printf("test '%s'\n", test->description);
+    // } 
+
+
+    sprintf(string, "%3d", size);
+    memcpy(string+HEADER_LENGTH, buffer, size);
+
+    size += HEADER_LENGTH;
+
+    while (size > 0)
+    {
+        int counter = send(fd, string, size, 0);
+
+        if (counter < 1)
+            return -1;
+
+        string += counter;
+        size -= counter;
+    }
+
+    return 1;
+}
+
+
+int repeat_receive(int sockfd, void * recv_buffer, int recv_buffer_size) {
+    char buf_header[HEADER_LENGTH];
+
+    int numbytes;
+    if ( recv(sockfd, buf_header, sizeof(buf_header), MSG_WAITALL) == -1 ) {
+        perror("recv");
+        exit(1);
+    }
+
+    int size = atoi(buf_header);
+
+    int lenght = 0;
+
+    do {
+        numbytes = recv(sockfd, recv_buffer + lenght, size, 0);
+
+        if (numbytes < 1)
+            return -1;
+        
+        lenght += numbytes;
+        size -= numbytes;
+    } while(lenght < size && lenght < recv_buffer_size);
+
+
+    return lenght;
+
+}
+
+
 int send_ack(int sockfd) {
 
     char ack[] = "ack";
-    if (send(sockfd, ack, sizeof(ack), 0) == -1) {
+    if (repeat_send(sockfd, ack, sizeof(ack)) == -1) {
         perror("send");
         exit(1);
     }
@@ -44,11 +109,11 @@ void choose_opt(int sockfd) {
     char choice[2];
 
     do {
-
         send_ack(sockfd);
 
         // receive login menu
-        if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+        numbytes = repeat_receive(sockfd, buf, sizeof(buf));
+        if ( numbytes == -1) {
             perror("recv");
             exit(1);
         }
@@ -60,12 +125,13 @@ void choose_opt(int sockfd) {
         choice[1] = '\0';
 
         // send selected option
-        if (send(sockfd, choice, sizeof(choice), 0) == -1) {
+        if (repeat_send(sockfd, choice, sizeof(choice)) == -1) {
             perror("send");
             return;
         }
 
-        if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+        numbytes = repeat_receive(sockfd, buf, sizeof(buf));
+        if ( numbytes == -1 ) {
             perror("recv");
             exit(1);
         }
@@ -82,7 +148,8 @@ user* input_user_and_pass (int sockfd) {
 
     send_ack(sockfd);
 
-    if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+    numbytes = repeat_receive(sockfd, buf, sizeof(buf));
+    if (numbytes == -1) {
         perror("recv");
         exit(1);
 
@@ -103,7 +170,7 @@ user* input_user_and_pass (int sockfd) {
     strcpy(new_user->pwd, password);
 
     // send struct with user info
-    if (send(sockfd, new_user, sizeof(user), 0) == -1) {
+    if (repeat_send(sockfd, new_user, sizeof(user)) == -1) {
         perror("send");
         free(new_user);
         return NULL;
@@ -111,7 +178,8 @@ user* input_user_and_pass (int sockfd) {
 
     // receive the status
     int status;
-    if ((numbytes = recv(sockfd, &status, sizeof(int), 0)) == -1) {
+    numbytes = repeat_receive(sockfd, &status, sizeof(int));
+    if (numbytes == -1) {
         perror("recv");
         exit(1);
     }
@@ -122,7 +190,8 @@ user* input_user_and_pass (int sockfd) {
 
     user* client = (user*)malloc((sizeof(user)));
     if (status) {
-        if ((numbytes = recv(sockfd, client, sizeof(user), 0)) == -1) {
+        numbytes = repeat_receive(sockfd, (char*)client, sizeof(user));
+        if (numbytes == -1) {
             perror("recv");
             exit(1);
 
@@ -136,7 +205,8 @@ user* input_user_and_pass (int sockfd) {
 
     else {
         client = NULL;
-        if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+        numbytes = repeat_receive(sockfd, buf, sizeof(buf));
+        if (numbytes == -1) {
             perror("recv");
             exit(1);
 
@@ -156,7 +226,8 @@ int interface_codigo(int sockfd) {
     int numbytes, status;
 
     // receive 'digite o codigo da disciplina:'
-    if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+    numbytes = repeat_receive(sockfd, buf, sizeof(buf));
+    if (numbytes == -1) {
         perror("recv");
         exit(1);
     }
@@ -174,13 +245,14 @@ int interface_codigo(int sockfd) {
     gettimeofday(&tv1, NULL);
 
     // sends the code value
-    if (send(sockfd, subj_name, sizeof(subj_name), 0) == -1) {
+    if (repeat_send(sockfd, subj_name, sizeof(subj_name)) == -1) {
         perror("send");
         return -1;
     }
 
     // receive the status
-    if ((numbytes = recv(sockfd, &status, sizeof(int), 0)) == -1) {
+    numbytes = repeat_receive(sockfd, &status, sizeof(int));
+    if (numbytes == -1) {
         perror("recv");
         exit(1);
     } 
@@ -198,7 +270,8 @@ void interface_ementa(int sockfd) {
     course* received_course = (course*)malloc(sizeof(course));
 
     //receive the subject's description
-    if ((numbytes = recv(sockfd, received_course, sizeof(course), 0)) == -1) {
+    numbytes = repeat_receive(sockfd, received_course, sizeof(course));
+    if (numbytes == -1) {
         perror("recv");
         exit(1);
     }
@@ -220,7 +293,8 @@ void interface_infos(int sockfd) {
 
     if (interface_codigo(sockfd)) {
 
-        if ((numbytes = recv(sockfd, received_course, sizeof(course), 0)) == -1) {
+        numbytes = repeat_receive(sockfd, received_course, sizeof(course));
+        if (numbytes == -1) {
             perror("recv");
             exit(1);
         } 
@@ -236,7 +310,8 @@ void interface_infos(int sockfd) {
         printf("Tempo total da operação: %.2f usecs\n", (float)(tv2.tv_usec - tv1.tv_usec));    }
     
     else {
-        if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+        numbytes = repeat_receive(sockfd, buf, sizeof(buf));
+        if (numbytes == -1) {
             perror("recv");
             exit(1);
         }
@@ -255,7 +330,8 @@ void interface_todas_infos(int sockfd) {
     char buf[MAXDATASIZE];
 
     // receive the status
-    if ((numbytes = recv(sockfd, &status, sizeof(int), 0)) == -1) {
+    numbytes = repeat_receive(sockfd, &status, sizeof(int));
+    if (numbytes == -1) {
         perror("recv");
         exit(1);
     } 
@@ -265,7 +341,8 @@ void interface_todas_infos(int sockfd) {
     if (status) {
 
         // receive the status
-        if ((numbytes = recv(sockfd, &status, sizeof(int), 0)) == -1) {
+        numbytes = repeat_receive(sockfd, &status, sizeof(int));
+        if ( numbytes == -1) {
             perror("recv");
             exit(1);
         } 
@@ -274,7 +351,8 @@ void interface_todas_infos(int sockfd) {
 
         while (status) {
 
-            if ((numbytes = recv(sockfd, received_course, sizeof(course), 0)) == -1) {
+            numbytes = repeat_receive(sockfd, received_course, sizeof(course));
+            if (numbytes == -1) {
                 perror("recv");
                 exit(1);
             } 
@@ -287,7 +365,8 @@ void interface_todas_infos(int sockfd) {
             send_ack(sockfd);
 
             // receive the status
-            if ((numbytes = recv(sockfd, &status, sizeof(int), 0)) == -1) {
+            numbytes = repeat_receive(sockfd, &status, sizeof(int));
+            if (numbytes == -1) {
                 perror("recv");
                 exit(1);
             } 
@@ -302,7 +381,8 @@ void interface_todas_infos(int sockfd) {
 
     }
     else {
-        if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+        numbytes = repeat_receive(sockfd, buf, sizeof(buf));
+        if (numbytes == -1) {
             perror("recv");
             exit(1);
         }
@@ -323,7 +403,8 @@ void interface_cod_titulos(int sockfd) {
     char buf[MAXDATASIZE];
 
     // receive the status
-    if ((numbytes = recv(sockfd, &status, sizeof(int), 0)) == -1) {
+    numbytes = repeat_receive(sockfd, &status, sizeof(int));
+    if (numbytes == -1) {
         perror("recv");
         exit(1);
     } 
@@ -334,7 +415,8 @@ void interface_cod_titulos(int sockfd) {
     if (status) {
 
         // receive the status
-        if ((numbytes = recv(sockfd, &status, sizeof(int), 0)) == -1) {
+        numbytes = repeat_receive(sockfd, &status, sizeof(int));
+        if ( numbytes == -1) {
             perror("recv");
             exit(1);
         } 
@@ -344,7 +426,8 @@ void interface_cod_titulos(int sockfd) {
 
         while (status) {
 
-            if ((numbytes = recv(sockfd, received_course, sizeof(course), 0)) == -1) {
+            numbytes = repeat_receive(sockfd, received_course, sizeof(course));
+            if (numbytes == -1) {
                 perror("recv");
                 exit(1);
             } 
@@ -356,7 +439,8 @@ void interface_cod_titulos(int sockfd) {
             send_ack(sockfd);
 
             // receive the status
-            if ((numbytes = recv(sockfd, &status, sizeof(int), 0)) == -1) {
+            numbytes = repeat_receive(sockfd, &status, sizeof(int));
+            if (numbytes == -1) {
                 perror("recv");
                 exit(1);
             } 
@@ -370,7 +454,8 @@ void interface_cod_titulos(int sockfd) {
 
     }
     else {
-        if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+        numbytes = repeat_receive(sockfd, buf, sizeof(buf));
+        if (numbytes == -1) {
             perror("recv");
             exit(1);
         }
@@ -393,7 +478,8 @@ void interface_ler_com(int sockfd) {
     course* received_course = (course*)malloc(sizeof(course));
 
     //receive the subject's comment
-    if ((numbytes = recv(sockfd, received_course, sizeof(course), 0)) == -1) {
+    numbytes = repeat_receive(sockfd, received_course, sizeof(course));
+    if (numbytes == -1) {
         perror("recv");
         exit(1);
     }
@@ -413,7 +499,8 @@ void interface_esc_com(int sockfd) {
 
     if (interface_codigo(sockfd)) {
 
-        if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+        numbytes = repeat_receive(sockfd, buf, sizeof(buf));
+        if (numbytes == -1) {
             perror("recv");
             exit(1);
         }
@@ -432,13 +519,13 @@ void interface_esc_com(int sockfd) {
 
         gettimeofday(&tv1, NULL);
 
-        if (send(sockfd, comment, sizeof(comment), 0) == -1) {
+        if (repeat_send(sockfd, comment, sizeof(comment)) == -1) {
             perror("send");
             return;
         }
 
-
-        if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+        numbytes = repeat_receive(sockfd, buf, sizeof(buf));
+        if (numbytes == -1) {
             perror("recv");
             exit(1);
         }
@@ -454,7 +541,8 @@ void interface_esc_com(int sockfd) {
 
     }
     else {
-        if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+        numbytes = repeat_receive(sockfd, buf, sizeof(buf));
+        if (numbytes == -1) {
             perror("recv");
             exit(1);
         }
@@ -489,7 +577,8 @@ void interface(int sockfd) {
         send_ack(sockfd);
 
         // receive options menu
-        if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+        numbytes = repeat_receive(sockfd, buf, sizeof(buf));
+        if (numbytes == -1) {
             perror("recv");
             free(client);   
             exit(1);
@@ -505,7 +594,7 @@ void interface(int sockfd) {
         gettimeofday(&tv1, NULL);
 
         // send selected menu option
-        if (send(sockfd, selected_option, sizeof(selected_option), 0) == -1) {
+        if (repeat_send(sockfd, selected_option, sizeof(selected_option)) == -1) {
             perror("send");
             free(client);
             return;

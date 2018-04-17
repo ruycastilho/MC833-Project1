@@ -34,8 +34,56 @@ void *get_in_addr(struct sockaddr *sa) {
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
+
+
+int repeat_receive(int sockfd, void * recv_buffer, int recv_buffer_size) {
+    char buf_header[HEADER_LENGTH];
+
+    int numbytes;
+    if ( recv(sockfd, buf_header, sizeof(buf_header), MSG_WAITALL) == -1 ) {
+        perror("recv");
+        exit(1);
+    }
+
+    int size = atoi(buf_header);
+        // printf("size->'%d'<-", size);
+
+    int lenght = 0;
+
+    do {
+        numbytes = recv(sockfd, recv_buffer + lenght, size, 0);
+
+        if (numbytes < 1)
+            return -1;
+        
+        lenght += numbytes;
+        size -= numbytes;
+    } while(lenght < size && lenght < recv_buffer_size);
+    
+    return lenght;
+
+}
+
 int repeat_send(int fd, const void *buffer, int size) {
-    char *string = (char*) buffer;
+    char *string = (char*)malloc(sizeof(char)*(size + HEADER_LENGTH));
+    // char string[size+HEADER_LENGTH];
+
+    char *input = (char*) buffer;
+    // printf("size '%d'", size);
+
+    // printf("input '%s'\n", input);
+
+    // if (strcmp(input, "MC102") == 0) {
+
+    //     course* test = (course*) buffer;
+    //     printf("test '%s'\n", test->description);
+    // } 
+
+
+    sprintf(string, "%3d", size);
+    memcpy(string+HEADER_LENGTH, buffer, size);
+
+    size += HEADER_LENGTH;
 
     while (size > 0)
     {
@@ -47,13 +95,16 @@ int repeat_send(int fd, const void *buffer, int size) {
         string += counter;
         size -= counter;
     }
+
     return 1;
 }
 
 int wait_for_ack(int fd) {
 
     // receive an acknowledgement
-    if (recv(fd, acknowledgement, sizeof(acknowledgement), 0) == -1) {
+    int numbytes = repeat_receive(fd, acknowledgement, sizeof(acknowledgement));
+    if ( numbytes == -1 ) {
+
         perror("recv");
         return -1;
     } 
@@ -67,17 +118,19 @@ course* code_search(int fd) {
     char buffer[MAXDATASIZE];
     int numbytes;
 
-    if (send(fd, string, sizeof(string), 0) == -1) {
+    if (repeat_send(fd, string, sizeof(string)) == -1) {
         perror("send");
         return NULL;
 
     }
 
     // receive the code number
-    if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
+    numbytes = repeat_receive(fd, buffer, MAXDATASIZE-1);
+    if ( numbytes == -1) {
         perror("recv");
         return NULL;
     }
+    buffer[numbytes] = '\0';
 
     // start the timer
     gettimeofday(&tv1, NULL);
@@ -302,16 +355,19 @@ int escrever_com(user* prof, int fd) {
     char buffer[MAXDATASIZE];
     int numbytes, found_course = 0, counter=0;
 
-    if (send(fd, string, sizeof(string), 0) == -1) {
+    if (repeat_send(fd, string, sizeof(string)) == -1) {
         perror("send");
         return -1;
 
     }
 
-    if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
+    numbytes = repeat_receive(fd, buffer, MAXDATASIZE-1);
+
+    if ( numbytes == -1) {
         perror("recv");
         return -1;
     }
+    buffer[numbytes] = '\0';
 
     // start the timer
     gettimeofday(&tv1, NULL);
@@ -427,10 +483,12 @@ int escrever_com(user* prof, int fd) {
         return -1;
     }
 
-    if ((numbytes = recv(fd, new_comment, MAXDATASIZE-1, 0)) == -1) {
+    numbytes = repeat_receive(fd, new_comment, MAXDATASIZE-1);
+    if (numbytes == -1) {
         perror("recv");
         return -1;
     }
+    buffer[numbytes] = '\0';
 
     strcpy(existing_course->comment, new_comment);
     fwrite(existing_course, sizeof(course), 1, courses_f);
@@ -514,7 +572,9 @@ int send_func_login(int fd) {
     }
 
     // receive the selected option
-    if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
+
+    numbytes = repeat_receive(fd, buffer, MAXDATASIZE-1);
+    if ( numbytes == -1) {
         perror("recv");
         return -1;
     }
@@ -528,10 +588,13 @@ int send_func_login(int fd) {
             return -1;
         }
 
-        if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
+        numbytes = repeat_receive(fd, buffer, MAXDATASIZE-1);
+        if ( numbytes== -1) {
             perror("recv");
             return -1;
         }
+        buffer[numbytes] = '\0';
+
     }
 
     if ( strcmp(buffer, "1") == 0) {
@@ -564,14 +627,14 @@ int send_menu(user* user_info, int fd) {
     }
 
     if (user_info->is_prof) {
-        if (send(fd, string_prof, sizeof(string_prof), 0) == -1) {
+        if (repeat_send(fd, string_prof, sizeof(string_prof)) == -1) {
             perror("send");
             return -1;
 
         }
     }
     else {
-        if (send(fd, string_stud, sizeof(string_stud), 0) == -1) {
+        if (repeat_send(fd, string_stud, sizeof(string_stud)) == -1) {
             perror("send");
             return -1;
 
@@ -579,10 +642,12 @@ int send_menu(user* user_info, int fd) {
 
     }
 
-    if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
+    numbytes = repeat_receive(fd, buffer, MAXDATASIZE-1);
+    if ( numbytes == -1) {
         perror("recv");
         return -1;
     }
+    buffer[numbytes] = '\0';
 
     char error_prof[] = "\nPor favor, digite números de 1 a 7.\n";
     char error_stud[] = "\nPor favor, digite números de 1 a 6.\n";
@@ -596,26 +661,30 @@ int send_menu(user* user_info, int fd) {
 
             }
 
-            if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
+            numbytes = repeat_receive(fd, buffer, MAXDATASIZE-1);
+            if ( numbytes== -1) {
                 perror("recv");
                 return -1;
             }
+            buffer[numbytes] = '\0';
 
         }
     }
     else {
 
         while (strcmp(buffer, "1") != 0 && strcmp(buffer, "2") != 0 && strcmp(buffer, "3") != 0 && strcmp(buffer, "4") != 0 && strcmp(buffer, "5") != 0 && strcmp(buffer, "6") != 0) {
-            if (send(fd, error_stud, sizeof(error_stud), 0) == -1) {
+            if (repeat_send(fd, error_stud, sizeof(error_stud)) == -1) {
                 perror("send");
                 return -1;
 
             }
 
-            if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
+            numbytes = repeat_receive(fd, buffer, MAXDATASIZE-1);
+            if ( numbytes == -1) {
                 perror("recv");
                 return -1;
             }
+            buffer[numbytes] = '\0';
 
         }
 
@@ -678,7 +747,9 @@ user* validate_login(int fd) {
     }
 
     // receive username and password
-    if ((numbytes = recv(fd, user_logging, sizeof(user), 0)) == -1) {
+    numbytes = repeat_receive(fd, user_logging, sizeof(user));
+
+    if ( numbytes == -1 ) {
         perror("recv");
         return NULL;
     }
@@ -698,7 +769,7 @@ user* validate_login(int fd) {
                 status = 1;
 
                 // send the status
-                if (send(fd, &status, sizeof(int), 0) == -1) {
+                if (repeat_send(fd, &status, sizeof(int)) == -1) {
                     perror("send");
                     return NULL;
                 }
@@ -709,7 +780,7 @@ user* validate_login(int fd) {
                     
                 }
                 // send the user struct
-                if (send(fd, existing_user, sizeof(user), 0) == -1) {
+                if (repeat_send(fd, existing_user, sizeof(user)) == -1) {
                     perror("send");
                     return NULL;
                 }
@@ -729,7 +800,7 @@ user* validate_login(int fd) {
 
         status = 0;
         // send the status
-        if (send(fd, &status, sizeof(int), 0) == -1) {
+        if (repeat_send(fd, &status, sizeof(int)) == -1) {
             perror("send");
             return NULL;
         }
@@ -738,7 +809,7 @@ user* validate_login(int fd) {
             return NULL;
             
         }
-        if (send(fd, string_erro1, sizeof(string_erro1), 0) == -1) {
+        if (repeat_send(fd, string_erro1, sizeof(string_erro1)) == -1) {
             perror("send");
             return NULL;
         }
@@ -753,7 +824,7 @@ user* validate_login(int fd) {
 
     status = 0;
     // send the status
-    if (send(fd, &status, sizeof(int), 0) == -1) {
+    if (repeat_send(fd, &status, sizeof(int)) == -1) {
         perror("send");
         return NULL;
     }
@@ -765,7 +836,7 @@ user* validate_login(int fd) {
 
     char string_erro2[] = "\nErro na validacao.\n";
 
-    if (send(fd, string_erro2, sizeof(string_erro2), 0) == -1) {
+    if (repeat_send(fd, string_erro2, sizeof(string_erro2)) == -1) {
         perror("send");
         return NULL;
     }

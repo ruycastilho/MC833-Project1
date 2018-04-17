@@ -18,6 +18,7 @@
 #define NAME_LENGTH 6
 #define PWD_LENGTH 2
 #define COMMENT_LENGTH 50
+#define HEADER_LENGTH 3
 
 typedef struct {
 
