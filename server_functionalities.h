@@ -14,7 +14,7 @@
 
 #define USERS "users.dat"
 #define COURSES "courses.dat"
-#define MAXDATASIZE 1000
+#define MAXDATASIZE 550
 #define NAME_LENGTH 6
 #define PWD_LENGTH 2
 #define COMMENT_LENGTH 50

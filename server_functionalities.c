@@ -55,10 +55,11 @@ int wait_for_ack(int fd) {
         perror("recv");
         return -1;
     } 
-    printf("server: received '%s'\n", acknowledgement);
+    printf("server: received ACK\n");
     return 1;
 
 }
+
 course* code_search(int fd) {
     char string[] = "\nDigite o código da disciplina:\n";
     char buffer[MAXDATASIZE];
@@ -149,7 +150,7 @@ int ementa(int fd) {
     int numbytes;
 
     if (course_info != NULL) {
-        if (repeat_send(fd, course_info->description, sizeof(course_info->description)) == -1) {
+        if (repeat_send(fd, course_info, sizeof(course)) == -1) {
             perror("send");
             free(course_info);
             return -1;
@@ -196,7 +197,6 @@ int todas_infos(int fd) {
     int numbytes, status = 1;
 
     if (courses_f = fopen(COURSES, "rb")) {
-        // printf("dsadasda\n");
 
         if (repeat_send(fd, &status, sizeof(status)) == -1) {
             perror("send");
@@ -308,16 +308,6 @@ int escrever_com(user* prof, int fd) {
         while ( fread(existing_course, sizeof(course), 1, courses_f) ) {
 
             if (strcmp(existing_course->code, buffer) == 0 ) {
-                status = 1;
-                if (repeat_send(fd, &status, sizeof(int)) == -1) {
-                    perror("send");
-                    return -1;
-                }
-
-                if (wait_for_ack(fd) == -1) {
-                    return -1;
-                    
-                }
 
                 found_course = 1;
                 break;
@@ -371,6 +361,8 @@ int escrever_com(user* prof, int fd) {
                 return -1;
             }
 
+            return 1;
+
         }
 
     }
@@ -391,6 +383,16 @@ int escrever_com(user* prof, int fd) {
             
         }
 
+    }
+    status = 1;
+    if (repeat_send(fd, &status, sizeof(int)) == -1) {
+        perror("send");
+        return -1;
+    }
+
+    if (wait_for_ack(fd) == -1) {
+        return -1;
+        
     }
 
     char new_comment[COMMENT_LENGTH];
@@ -453,7 +455,7 @@ int ler_com(int fd) {
     course* course_info = code_search(fd);
 
     if (course_info != NULL) {
-        if (repeat_send(fd, course_info->comment, sizeof(course_info->comment)) == -1) {
+        if (repeat_send(fd, course_info, sizeof(course)) == -1) {
             perror("send");
             free(course_info);
             return -1;
@@ -472,13 +474,17 @@ int send_func_login(int fd) {
     char string[] = "\nBoas vindas ao Sistema de Disciplinas da UNICAMP\nSe deseja logar digite 1. Se deseja sair, digite 2.\n";
     char buffer[MAXDATASIZE];
     int numbytes;
-    
+
+    if (wait_for_ack(fd) == -1) {
+        return -1;
+        
+    }
+
     // send options menu
-    if ((numbytes = send(fd, string, sizeof(string), 0)) == -1) {
+    if (repeat_send(fd, string, sizeof(string)) == -1) {
         perror("send");
         return -1;
     }
-    printf("ja dei boas vindas ao sistema, %d bytes enviados\n", numbytes);
 
     // receive the selected option
     if ((numbytes = recv(fd, buffer, MAXDATASIZE-1, 0)) == -1) {
@@ -486,9 +492,9 @@ int send_func_login(int fd) {
         return -1;
     }
     buffer[numbytes] = '\0';
-    printf("server: received '%s'\n",buffer);
 
     char erro[] = "\nPor favor, digite 1 ou 2.\n";
+
     while (strcmp(buffer, "1") != 0 && strcmp(buffer, "2") != 0) {
         if (repeat_send(fd, erro, sizeof(erro)) == -1) {
             perror("send");
@@ -502,7 +508,15 @@ int send_func_login(int fd) {
     }
 
     if ( strcmp(buffer, "1") == 0) {
+    
+        char feedback[] = "\n\t\tLogin";
+
+        if (repeat_send(fd, feedback, sizeof(feedback)) == -1) {
+            perror("send");
+            return -1;
+        }
         return 1;
+
     }
 
     return -1;
@@ -580,7 +594,6 @@ int send_menu(user* user_info, int fd) {
 
     }
 
-    printf("comando: %d\n", buffer[0] - '0');
     switch (buffer[0] - '0') {
 
         case 1:
@@ -621,8 +634,14 @@ user* validate_login(int fd) {
     int numbytes;
     user* user_logging = (user*)malloc(sizeof(user)), *existing_user = (user*)malloc(sizeof(user));
 
+
+    if (wait_for_ack(fd) == -1) {
+        return NULL;
+        
+    }
+
     // send 'digite nome e senha em linhas separadas'
-    if (send(fd, string, 53, 0) == -1) {
+    if (repeat_send(fd, string, sizeof(string)) == -1) {
         perror("send");
         return NULL;
     }
@@ -632,7 +651,7 @@ user* validate_login(int fd) {
         perror("recv");
         return NULL;
     }
-    printf("server: received '%s' '%s'\n", user_logging->name, user_logging->pwd);
+    printf("server: user:'%s' pwd:'%s'\n", user_logging->name, user_logging->pwd);
 
 
     FILE* users_f ;
@@ -674,11 +693,26 @@ user* validate_login(int fd) {
             }
         }
 
+
+        char string_erro1[] = "\nUsuario nao encontrado.\n";
+
+        status = 0;
+        // send the status
         if (send(fd, &status, sizeof(int), 0) == -1) {
             perror("send");
             return NULL;
         }
+        // receive an acknowledgement from the previous message
+        if (wait_for_ack(fd) == -1) {
+            return NULL;
+            
+        }
+        if (send(fd, string_erro1, sizeof(string_erro1), 0) == -1) {
+            perror("send");
+            return NULL;
+        }
 
+        return NULL;
 
     }
 
@@ -686,13 +720,24 @@ user* validate_login(int fd) {
     free(user_logging);
     fclose(users_f);
 
-    char string_erro[] = "\nErro na validacao.\n";
-
-    if (send(fd, string_erro, sizeof(string_erro), 0) == -1) {
+    status = 0;
+    // send the status
+    if (send(fd, &status, sizeof(int), 0) == -1) {
         perror("send");
         return NULL;
     }
+    // receive an acknowledgement from the previous message
+    if (wait_for_ack(fd) == -1) {
+        return NULL;
+        
+    }
 
+    char string_erro2[] = "\nErro na validacao.\n";
+
+    if (send(fd, string_erro2, sizeof(string_erro2), 0) == -1) {
+        perror("send");
+        return NULL;
+    }
 
     return NULL;
 
@@ -710,8 +755,6 @@ void send_func(int fd) {
     
             // Returns user info or null pointer
             user_info = validate_login(fd);
-
-            printf("%s\n", user_info->name);
 
             if (user_info != NULL) {
                 do {

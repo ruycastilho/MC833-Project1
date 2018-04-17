@@ -41,9 +41,21 @@ void choose_opt(int sockfd) {
     char choice[2];
 
     do {
+
+        send_ack(sockfd);
+
+        // receive login menu
+        if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+            perror("recv");
+            exit(1);
+        }
+        buf[numbytes] = '\0';
+        printf("%s",buf);
+
         printf("Opcao: ");
         scanf("%s", choice);
         choice[1] = '\0';
+
         // send selected option
         if (send(sockfd, choice, sizeof(choice), 0) == -1) {
             perror("send");
@@ -55,15 +67,25 @@ void choose_opt(int sockfd) {
             exit(1);
         }
         buf[numbytes] = '\0';
-        printf("%s\n",buf);
+        printf("%s",buf);
 
-    } while (strcmp(buf, "Por favor, digite 1 ou 2.\n") == 0);
+    } while (strcmp(buf, "\nPor favor, digite 1 ou 2.\n") == 0);
 
 }
 
 user* input_user_and_pass (int sockfd) {
     char buf[MAXDATASIZE];
     int numbytes;
+
+    send_ack(sockfd);
+
+    if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+        perror("recv");
+        exit(1);
+
+    }
+    buf[numbytes] = '\0';
+    printf("%s",buf);
 
     printf("Nome: ");
     char username[NAME_LENGTH];
@@ -76,8 +98,6 @@ user* input_user_and_pass (int sockfd) {
     user* new_user = (user*)malloc(sizeof(user));
     strcpy(new_user->name, username);
     strcpy(new_user->pwd, password);
-
-    // printf("user: '%s' '%s'\n", new_user->name, new_user->pwd);
 
     // send struct with user info
     if (send(sockfd, new_user, sizeof(user), 0) == -1) {
@@ -92,7 +112,6 @@ user* input_user_and_pass (int sockfd) {
         perror("recv");
         exit(1);
     }
-    // printf("status: %d\n", status);
 
     // send message acknowledgement
     send_ack(sockfd);
@@ -114,6 +133,14 @@ user* input_user_and_pass (int sockfd) {
 
     else {
         client = NULL;
+        if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+            perror("recv");
+            exit(1);
+
+        }
+    
+        buf[numbytes] = '\0';
+        printf("%s",buf);
 
     }
 
@@ -150,7 +177,6 @@ int interface_codigo(int sockfd) {
         perror("recv");
         exit(1);
     } 
-    // printf("%d\n", status);
 
     send_ack(sockfd);
 
@@ -161,19 +187,18 @@ int interface_codigo(int sockfd) {
 void interface_ementa(int sockfd) {
     interface_codigo(sockfd);
 
-    char buf[MAXDATASIZE];
     int numbytes;
+    course* received_course = (course*)malloc(sizeof(course));
 
     //receive the subject's description
-    if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+    if ((numbytes = recv(sockfd, received_course, sizeof(course), 0)) == -1) {
         perror("recv");
         exit(1);
     }
-
-    buf[numbytes] = '\0';
-    printf("\nEmenta: %s\n",buf);
+    printf("\nEmenta: %s\n", received_course->description);
 
     send_ack(sockfd);
+    free(received_course);
 
 }
 
@@ -219,7 +244,6 @@ void interface_todas_infos(int sockfd) {
         perror("recv");
         exit(1);
     } 
-    // printf("%d\n", status);
 
     send_ack(sockfd);
 
@@ -230,7 +254,6 @@ void interface_todas_infos(int sockfd) {
             perror("recv");
             exit(1);
         } 
-        // printf("%d\n", status);
 
         send_ack(sockfd);
 
@@ -253,7 +276,6 @@ void interface_todas_infos(int sockfd) {
                 perror("recv");
                 exit(1);
             } 
-            // printf("%d\n", status);
             
             send_ack(sockfd);
 
@@ -287,7 +309,6 @@ void interface_cod_titulos(int sockfd) {
         perror("recv");
         exit(1);
     } 
-    // printf("%d\n", status);
 
     send_ack(sockfd);
 
@@ -299,7 +320,6 @@ void interface_cod_titulos(int sockfd) {
             perror("recv");
             exit(1);
         } 
-        // printf("%d\n", status);
 
         send_ack(sockfd);
 
@@ -322,7 +342,6 @@ void interface_cod_titulos(int sockfd) {
                 perror("recv");
                 exit(1);
             } 
-            // printf("%d\n", status);
 
             send_ack(sockfd);
 
@@ -350,16 +369,16 @@ void interface_cod_titulos(int sockfd) {
 void interface_ler_com(int sockfd) {
     interface_codigo(sockfd);
 
-    char buf[MAXDATASIZE];
     int numbytes;
+    course* received_course = (course*)malloc(sizeof(course));
 
-    if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+    //receive the subject's comment
+    if ((numbytes = recv(sockfd, received_course, sizeof(course), 0)) == -1) {
         perror("recv");
         exit(1);
     }
-
-    buf[numbytes] = '\0';
-    printf("\nComentario: %s\n",buf);
+    printf("\nComentario: %s\n", received_course->comment);
+    free(received_course);
 
 }
 
@@ -426,21 +445,11 @@ void interface(int sockfd) {
 
     do {
 
-        // receive login menu
-        if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
-            perror("recv");
-            exit(1);
-        }
-        buf[numbytes] = '\0';
-        printf("%s",buf);
-
         // send selected option and receive 'digite seu nome e senha em linhas separadas'
         choose_opt(sockfd);
+
         // send username and password 
         client = input_user_and_pass(sockfd);
-        if (client->is_prof) {
-            printf("'%s''%s''%d'\n", client->name, client->pwd, client->is_prof);
-        }
 
     } while ( client == NULL );
 
@@ -498,8 +507,11 @@ void interface(int sockfd) {
                 }
                 break;
             case 7:
-                free(client);
-                return;
+                if (client->is_prof) {
+                    free(client);
+                    return;
+
+                }
 
         }
 
