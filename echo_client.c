@@ -12,9 +12,12 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <sys/time.h>
 #include "server_functionalities.h"
 
 #define PORT "4000" 
+
+struct timeval tv1, tv2;
 
 // get sockaddr, IPv4 or IPv6:
 void *get_in_addr(struct sockaddr *sa) {
@@ -166,6 +169,10 @@ int interface_codigo(int sockfd) {
     scanf("%s", subj_name);
     subj_name[5] = '\0';
 
+    
+    // start the timer
+    gettimeofday(&tv1, NULL);
+
     // sends the code value
     if (send(sockfd, subj_name, sizeof(subj_name), 0) == -1) {
         perror("send");
@@ -195,7 +202,11 @@ void interface_ementa(int sockfd) {
         perror("recv");
         exit(1);
     }
+
+    gettimeofday(&tv2, NULL);
     printf("\nEmenta: %s\n", received_course->description);
+
+    printf("Tempo total da operação: %.2f usecs\n", (float)(tv2.tv_usec - tv1.tv_usec));
 
     send_ack(sockfd);
     free(received_course);
@@ -214,12 +225,16 @@ void interface_infos(int sockfd) {
             exit(1);
         } 
 
+        gettimeofday(&tv2, NULL);
+
         printf("\nCodigo: %s\nTitulo: %s\nInstituto: %s\nSala: %s\nHorario: %s\nEmenta: %s\nProfessor: %s\nComentario: %s\n", 
                 received_course->code, received_course->name, received_course->institute,
                 received_course->room, received_course->schedule, received_course->description,
                 received_course->professor, received_course->comment);
 
-    }
+
+        printf("Tempo total da operação: %.2f usecs\n", (float)(tv2.tv_usec - tv1.tv_usec));    }
+    
     else {
         if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
             perror("recv");
@@ -280,6 +295,9 @@ void interface_todas_infos(int sockfd) {
             send_ack(sockfd);
 
         }
+        gettimeofday(&tv2, NULL);
+        printf("Tempo total da operação: %.2f usecs\n", (float)(tv2.tv_usec - tv1.tv_usec));
+
 
 
     }
@@ -347,6 +365,8 @@ void interface_cod_titulos(int sockfd) {
 
         }
 
+        gettimeofday(&tv2, NULL);
+        printf("Tempo total da operação: %.2f usecs\n", (float)(tv2.tv_usec - tv1.tv_usec));
 
     }
     else {
@@ -377,9 +397,13 @@ void interface_ler_com(int sockfd) {
         perror("recv");
         exit(1);
     }
+
+    gettimeofday(&tv2, NULL);
+
     printf("\nComentario: %s\n", received_course->comment);
     free(received_course);
 
+    printf("Tempo total da operação: %.2f usecs\n", (float)(tv2.tv_usec - tv1.tv_usec));
 }
 
 void interface_esc_com(int sockfd) {
@@ -406,6 +430,8 @@ void interface_esc_com(int sockfd) {
                 comment[i] = '\0';
         }
 
+        gettimeofday(&tv1, NULL);
+
         if (send(sockfd, comment, sizeof(comment), 0) == -1) {
             perror("send");
             return;
@@ -417,8 +443,12 @@ void interface_esc_com(int sockfd) {
             exit(1);
         }
 
+        gettimeofday(&tv2, NULL);
+
         buf[numbytes] = '\0';
         printf("%s",buf);
+
+        printf("Tempo total da operação: %.2f usecs\n", (float)(tv2.tv_usec - tv1.tv_usec));
 
         send_ack(sockfd);
 
@@ -471,6 +501,8 @@ void interface(int sockfd) {
         char selected_option[2];
         scanf("%s", selected_option);
         selected_option[1] = '\0';
+
+        gettimeofday(&tv1, NULL);
 
         // send selected menu option
         if (send(sockfd, selected_option, sizeof(selected_option), 0) == -1) {

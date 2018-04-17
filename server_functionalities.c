@@ -9,10 +9,12 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <sys/wait.h>
+#include <sys/time.h>
 #include <signal.h>
 #include <string.h>
 #include "server_functionalities.h"
 
+struct timeval tv1, tv2;
 char acknowledgement[4];
 
 void sigchld_handler(int s) {
@@ -76,6 +78,10 @@ course* code_search(int fd) {
         perror("recv");
         return NULL;
     }
+
+    // start the timer
+    gettimeofday(&tv1, NULL);
+
 
     FILE* courses_f ;
     int status = 0;
@@ -150,6 +156,11 @@ int ementa(int fd) {
     int numbytes;
 
     if (course_info != NULL) {
+
+        gettimeofday(&tv2, NULL);
+        printf("Tempo total da operação: %.2f usecs\n", (float)(tv2.tv_usec - tv1.tv_usec));
+
+
         if (repeat_send(fd, course_info, sizeof(course)) == -1) {
             perror("send");
             free(course_info);
@@ -176,6 +187,9 @@ int infos(int fd) {
     int numbytes;
 
     if (course_info != NULL) {
+
+        gettimeofday(&tv2, NULL);
+        printf("Tempo total da operação: %.2f usecs\n", (float)(tv2.tv_usec - tv1.tv_usec));
 
         if (repeat_send(fd, course_info, sizeof(course)) == -1) {
             perror("send");
@@ -299,6 +313,9 @@ int escrever_com(user* prof, int fd) {
         return -1;
     }
 
+    // start the timer
+    gettimeofday(&tv1, NULL);
+
     FILE* courses_f ;
     course* existing_course = (course*)malloc(sizeof(course));
     int status = 0;
@@ -317,6 +334,11 @@ int escrever_com(user* prof, int fd) {
             counter++;
 
         }
+
+        // stop the timer and print elapsed time
+        gettimeofday(&tv2, NULL);
+        printf("tempo total da operação: %.2f usecs\n", (float)(tv2.tv_usec - tv1.tv_usec));
+
 
         if (!found_course) {
             if (repeat_send(fd, &status, sizeof(int)) == -1) {
@@ -455,6 +477,11 @@ int ler_com(int fd) {
     course* course_info = code_search(fd);
 
     if (course_info != NULL) {
+
+        // stop the timer and print elapsed time
+        gettimeofday(&tv2, NULL);
+        printf("Tempo total da operação: %.2f usecs\n", (float)(tv2.tv_usec - tv1.tv_usec));
+
         if (repeat_send(fd, course_info, sizeof(course)) == -1) {
             perror("send");
             free(course_info);
@@ -593,6 +620,10 @@ int send_menu(user* user_info, int fd) {
         }
 
     }
+
+
+    // start timer
+    gettimeofday(&tv1, NULL);
 
     switch (buffer[0] - '0') {
 
