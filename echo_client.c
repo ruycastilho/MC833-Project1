@@ -495,7 +495,9 @@ void interface_ler_com(int sockfd) {
     printf("\nComentario: %s\n", received_course->comment);
     free(received_course);
 
-    printf("Tempo total da operação: %.2f usecs\n", (double)(tv2.tv_usec - tv1.tv_usec));
+    // stop the timer and print elapsed time
+    gettimeofday(&tv2, NULL);
+    printf("%.0f\n", (tv2.tv_sec*1e6 + tv2.tv_usec) - (tv1.tv_sec*1e6 + tv1.tv_usec));
 }
 
 void interface_esc_com(int sockfd) {
