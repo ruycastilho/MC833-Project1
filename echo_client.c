@@ -330,6 +330,7 @@ void interface_todas_infos(int sockfd) {
     course* received_course = (course*)malloc(sizeof(course));
     int numbytes, status;
     char buf[MAXDATASIZE];
+    float total_time = 0;
 
     // receive the status
     numbytes = repeat_receive(sockfd, &status, sizeof(int));
@@ -349,6 +350,8 @@ void interface_todas_infos(int sockfd) {
             exit(1);
         } 
 
+        // start the timer
+        gettimeofday(&tv1, NULL);
         send_ack(sockfd);
 
         while (status) {
@@ -358,6 +361,10 @@ void interface_todas_infos(int sockfd) {
                 perror("recv");
                 exit(1);
             } 
+
+            // stop the timer and print elapsed time
+            gettimeofday(&tv2, NULL);
+            total_time = (tv2.tv_sec*1e6 + tv2.tv_usec) - (tv1.tv_sec*1e6 + tv1.tv_usec);
 
             printf("\nCodigo: %s\nTitulo: %s\nInstituto: %s\nSala: %s\nHorario: %s\nEmenta: %s\nProfessor: %s\nComentario: %s\n", 
                     received_course->code, received_course->name, received_course->institute,
@@ -376,11 +383,6 @@ void interface_todas_infos(int sockfd) {
             send_ack(sockfd);
 
         }
-        gettimeofday(&tv2, NULL);
-        printf("Tempo total da operação: %.2f usecs\n", (double)(tv2.tv_usec - tv1.tv_usec));
-
-
-
     }
     else {
         numbytes = repeat_receive(sockfd, buf, sizeof(buf));
@@ -395,6 +397,8 @@ void interface_todas_infos(int sockfd) {
         send_ack(sockfd);
 
     }
+
+    printf("Tempo total da operação: %f usecs\n", total_time);
 
     free(received_course);
 }

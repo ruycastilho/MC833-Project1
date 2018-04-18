@@ -263,6 +263,7 @@ int todas_infos(int fd) {
     FILE* courses_f ;
     course* existing_course = (course*)malloc(sizeof(course));
     int numbytes, status = 1;
+    float total_time = 0;
 
     if (courses_f = fopen(COURSES, "rb")) {
 
@@ -274,11 +275,17 @@ int todas_infos(int fd) {
         }
         if (wait_for_ack(fd) == -1) {
             return -1;
-            
         }
+        // start the timer
+        gettimeofday(&tv1, NULL);
 
         while ( fread(existing_course, sizeof(course), 1, courses_f) ) {
-  
+            
+            // stop the timer and print elapsed time
+            gettimeofday(&tv2, NULL);
+            // time_last_while_it - time_before_while
+            total_time = (tv2.tv_sec*1e6 + tv2.tv_usec) - (tv1.tv_sec*1e6 + tv1.tv_usec);
+
             if (repeat_send(fd, &status, sizeof(status)) == -1) {
                 perror("send");
                 free(existing_course);
@@ -304,6 +311,8 @@ int todas_infos(int fd) {
             }
 
         }
+
+        printf("%.0f\n", total_time);
 
         free(existing_course);
         fclose(courses_f);
