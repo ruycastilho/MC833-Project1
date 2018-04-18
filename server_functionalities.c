@@ -210,7 +210,7 @@ int ementa(int fd) {
 
     if (course_info != NULL) {
 
-        printf("Tempo total da operação: %.2f usecs\n", (double)(tv2.tv_usec - tv1.tv_usec));
+        printf("Tempo total da operação: %.2lf usecs\n", (double)(tv2.tv_usec - tv1.tv_usec));
 
         // stop the timer
         gettimeofday(&tv2, NULL);
