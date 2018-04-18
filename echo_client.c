@@ -280,7 +280,7 @@ void interface_ementa(int sockfd) {
     gettimeofday(&tv2, NULL);
     printf("\nEmenta: %s\n", received_course->description);
 
-    printf("Tempo total da operação: %.2lf usecs\n", (double)(tv2.tv_usec - tv1.tv_usec));
+    printf("Tempo total da operação: %f usecs\n", (tv2.tv_sec*1e6 + tv2.tv_usec) - (tv1.tv_sec*1e6 + tv1.tv_usec));
 
     send_ack(sockfd);
     free(received_course);
