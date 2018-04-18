@@ -308,7 +308,8 @@ void interface_infos(int sockfd) {
                 received_course->professor, received_course->comment);
 
 
-        printf("Tempo total da operação: %.2f usecs\n", (double)(tv2.tv_usec - tv1.tv_usec));    }
+        printf("Tempo total da operação: %f usecs\n", (tv2.tv_sec*1e6 + tv2.tv_usec) - (tv1.tv_sec*1e6 + tv1.tv_usec));
+    }
     
     else {
         numbytes = repeat_receive(sockfd, buf, sizeof(buf));

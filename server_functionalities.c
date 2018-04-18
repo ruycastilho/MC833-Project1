@@ -243,7 +243,7 @@ int infos(int fd) {
     if (course_info != NULL) {
 
         gettimeofday(&tv2, NULL);
-        printf("Tempo total da operação: %.2f usecs\n", (double)(tv2.tv_usec - tv1.tv_usec));
+        printf("Tempo total da operação: %f usecs\n", (tv2.tv_sec*1e6 + tv2.tv_usec) - (tv1.tv_sec*1e6 + tv1.tv_usec));
 
         if (repeat_send(fd, course_info, sizeof(course)) == -1) {
             perror("send");
