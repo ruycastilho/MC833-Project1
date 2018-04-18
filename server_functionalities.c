@@ -210,7 +210,7 @@ int ementa(int fd) {
 
     if (course_info != NULL) {
 
-        printf("Tempo total da operação: %.2f usecs\n", (float)(tv2.tv_usec - tv1.tv_usec));
+        printf("Tempo total da operação: %.2f usecs\n", (double)(tv2.tv_usec - tv1.tv_usec));
 
         // stop the timer
         gettimeofday(&tv2, NULL);
@@ -242,7 +242,7 @@ int infos(int fd) {
     if (course_info != NULL) {
 
         gettimeofday(&tv2, NULL);
-        printf("Tempo total da operação: %.2f usecs\n", (float)(tv2.tv_usec - tv1.tv_usec));
+        printf("Tempo total da operação: %.2f usecs\n", (double)(tv2.tv_usec - tv1.tv_usec));
 
         if (repeat_send(fd, course_info, sizeof(course)) == -1) {
             perror("send");
@@ -393,7 +393,7 @@ int escrever_com(user* prof, int fd) {
 
         // stop the timer and print elapsed time
         gettimeofday(&tv2, NULL);
-        printf("tempo total da operação: %.2f usecs\n", (float)(tv2.tv_usec - tv1.tv_usec));
+        printf("tempo total da operação: %.2f usecs\n", (double)(tv2.tv_usec - tv1.tv_usec));
 
 
         if (!found_course) {
@@ -538,7 +538,7 @@ int ler_com(int fd) {
 
         // stop the timer and print elapsed time
         gettimeofday(&tv2, NULL);
-        printf("Tempo total da operação: %.2f usecs\n", (float)(tv2.tv_usec - tv1.tv_usec));
+        printf("Tempo total da operação: %.2f usecs\n", (double)(tv2.tv_usec - tv1.tv_usec));
 
         if (repeat_send(fd, course_info, sizeof(course)) == -1) {
             perror("send");

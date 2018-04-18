@@ -280,7 +280,7 @@ void interface_ementa(int sockfd) {
     gettimeofday(&tv2, NULL);
     printf("\nEmenta: %s\n", received_course->description);
 
-    printf("Tempo total da operação: %.2f usecs\n", (float)(tv2.tv_usec - tv1.tv_usec));
+    printf("Tempo total da operação: %.2f usecs\n", (double)(tv2.tv_usec - tv1.tv_usec));
 
     send_ack(sockfd);
     free(received_course);
@@ -308,7 +308,7 @@ void interface_infos(int sockfd) {
                 received_course->professor, received_course->comment);
 
 
-        printf("Tempo total da operação: %.2f usecs\n", (float)(tv2.tv_usec - tv1.tv_usec));    }
+        printf("Tempo total da operação: %.2f usecs\n", (double)(tv2.tv_usec - tv1.tv_usec));    }
     
     else {
         numbytes = repeat_receive(sockfd, buf, sizeof(buf));
@@ -376,7 +376,7 @@ void interface_todas_infos(int sockfd) {
 
         }
         gettimeofday(&tv2, NULL);
-        printf("Tempo total da operação: %.2f usecs\n", (float)(tv2.tv_usec - tv1.tv_usec));
+        printf("Tempo total da operação: %.2f usecs\n", (double)(tv2.tv_usec - tv1.tv_usec));
 
 
 
@@ -451,7 +451,7 @@ void interface_cod_titulos(int sockfd) {
         }
 
         gettimeofday(&tv2, NULL);
-        printf("Tempo total da operação: %.2f usecs\n", (float)(tv2.tv_usec - tv1.tv_usec));
+        printf("Tempo total da operação: %.2f usecs\n", (double)(tv2.tv_usec - tv1.tv_usec));
 
     }
     else {
@@ -490,7 +490,7 @@ void interface_ler_com(int sockfd) {
     printf("\nComentario: %s\n", received_course->comment);
     free(received_course);
 
-    printf("Tempo total da operação: %.2f usecs\n", (float)(tv2.tv_usec - tv1.tv_usec));
+    printf("Tempo total da operação: %.2f usecs\n", (double)(tv2.tv_usec - tv1.tv_usec));
 }
 
 void interface_esc_com(int sockfd) {
@@ -536,7 +536,7 @@ void interface_esc_com(int sockfd) {
         buf[numbytes] = '\0';
         printf("%s",buf);
 
-        printf("Tempo total da operação: %.2f usecs\n", (float)(tv2.tv_usec - tv1.tv_usec));
+        printf("Tempo total da operação: %.2f usecs\n", (double)(tv2.tv_usec - tv1.tv_usec));
 
         send_ack(sockfd);
 
