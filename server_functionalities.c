@@ -108,7 +108,7 @@ int wait_for_ack(int fd) {
         perror("recv");
         return -1;
     } 
-    printf("server: received ACK\n");
+    // printf("server: received ACK\n");
     return 1;
 
 }
@@ -548,7 +548,7 @@ int ler_com(int fd) {
 
         // stop the timer and print elapsed time
         gettimeofday(&tv2, NULL);
-        printf("Tempo total da operação: %.2f usecs\n", (double)(tv2.tv_usec - tv1.tv_usec));
+        printf("Tempo total da operação: %f usecs\n", (tv2.tv_sec*1e6 + tv2.tv_usec) - (tv1.tv_sec*1e6 + tv1.tv_usec));
 
         if (repeat_send(fd, course_info, sizeof(course)) == -1) {
             perror("send");
