@@ -1,4 +1,4 @@
-/*
+ /*
 ** client.c -- a stream socket client demo
 */
 
@@ -276,6 +276,7 @@ void interface_ementa(int sockfd) {
         exit(1);
     }
 
+    // stop timer
     gettimeofday(&tv2, NULL);
     printf("\nEmenta: %s\n", received_course->description);
 

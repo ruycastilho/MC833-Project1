@@ -210,10 +210,10 @@ int ementa(int fd) {
 
     if (course_info != NULL) {
 
-        gettimeofday(&tv2, NULL);
         printf("Tempo total da operação: %.2f usecs\n", (float)(tv2.tv_usec - tv1.tv_usec));
 
-
+        // stop the timer
+        gettimeofday(&tv2, NULL);
         if (repeat_send(fd, course_info, sizeof(course)) == -1) {
             perror("send");
             free(course_info);
