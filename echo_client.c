@@ -543,7 +543,7 @@ void interface_esc_com(int sockfd) {
         buf[numbytes] = '\0';
         printf("%s",buf);
 
-        printf("Tempo total da operação: %.2f usecs\n", (double)(tv2.tv_usec - tv1.tv_usec));
+        printf("Tempo total da operação: %f usecs\n", (tv2.tv_sec*1e6 + tv2.tv_usec) - (tv1.tv_sec*1e6 + tv1.tv_usec));
 
         send_ack(sockfd);
 
@@ -598,8 +598,6 @@ void interface(int sockfd) {
         char selected_option[2];
         scanf("%s", selected_option);
         selected_option[1] = '\0';
-
-        gettimeofday(&tv1, NULL);
 
         // send selected menu option
         if (repeat_send(sockfd, selected_option, sizeof(selected_option)) == -1) {
