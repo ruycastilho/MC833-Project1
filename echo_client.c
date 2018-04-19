@@ -506,13 +506,13 @@ void interface_esc_com(int sockfd) {
     int numbytes;
 
     if (interface_codigo(sockfd)) {
-
+        
+        // receive 'digite o codigo da disciplina'
         numbytes = repeat_receive(sockfd, buf, sizeof(buf));
         if (numbytes == -1) {
             perror("recv");
             exit(1);
         }
-
         buf[numbytes] = '\0';
         printf("%s",buf);
 
@@ -525,13 +525,16 @@ void interface_esc_com(int sockfd) {
                 comment[i] = '\0';
         }
 
+        // start the timer
         gettimeofday(&tv1, NULL);
-
+        
+        // send the comment
         if (repeat_send(sockfd, comment, sizeof(comment)) == -1) {
             perror("send");
             return;
         }
-
+    
+        
         numbytes = repeat_receive(sockfd, buf, sizeof(buf));
         if (numbytes == -1) {
             perror("recv");

@@ -370,17 +370,18 @@ int escrever_com(user* prof, int fd) {
         return -1;
 
     }
-
+    
+    // receive the subject code
     numbytes = repeat_receive(fd, buffer, MAXDATASIZE-1);
+    
+    // start the timer
+    gettimeofday(&tv1, NULL);
 
     if ( numbytes == -1) {
         perror("recv");
         return -1;
     }
     buffer[numbytes] = '\0';
-
-    // start the timer
-    gettimeofday(&tv1, NULL);
 
     FILE* courses_f ;
     course* existing_course = (course*)malloc(sizeof(course));
@@ -391,7 +392,6 @@ int escrever_com(user* prof, int fd) {
         while ( fread(existing_course, sizeof(course), 1, courses_f) ) {
 
             if (strcmp(existing_course->code, buffer) == 0 ) {
-
                 found_course = 1;
                 break;
 
@@ -400,11 +400,6 @@ int escrever_com(user* prof, int fd) {
             counter++;
 
         }
-
-        // stop the timer and print elapsed time
-        gettimeofday(&tv2, NULL);
-        printf("tempo total da operação: %.2f usecs\n", (double)(tv2.tv_usec - tv1.tv_usec));
-
 
         if (!found_course) {
             if (repeat_send(fd, &status, sizeof(int)) == -1) {
@@ -508,7 +503,9 @@ int escrever_com(user* prof, int fd) {
     if ( fwrite != 0 ) {
         char feedback[] = "\nComentario adicionado.\n";
         free(existing_course);
-
+        
+        printf("%f\n", (tv2.tv_sec*1e6 + tv2.tv_usec) - (tv1.tv_sec*1e6 + tv1.tv_usec));
+        
         if (repeat_send(fd, feedback, sizeof(feedback)) == -1) {
             perror("send");
             return -1;
