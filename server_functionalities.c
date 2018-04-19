@@ -504,7 +504,8 @@ int escrever_com(user* prof, int fd) {
         char feedback[] = "\nComentario adicionado.\n";
         free(existing_course);
         
-        printf("%f\n", (tv2.tv_sec*1e6 + tv2.tv_usec) - (tv1.tv_sec*1e6 + tv1.tv_usec));
+        gettimeofday(&tv2, NULL);
+        printf("%.0f\n", (tv2.tv_sec*1e6 + tv2.tv_usec) - (tv1.tv_sec*1e6 + tv1.tv_usec));
         
         if (repeat_send(fd, feedback, sizeof(feedback)) == -1) {
             perror("send");
